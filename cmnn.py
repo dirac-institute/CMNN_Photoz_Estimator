@@ -191,28 +191,8 @@ def run( input_catalog_filename, output_catalog_filename, number_of_filters, \
     fout.close()
 
 
-
-def plot_tzpz_hist2d( input_zphot_catalog, output_plot_filename):
-    ztrue = np.loadtxt( input_zphot_catalog, dtype='float', usecols={1})
-    zphot = np.loadtxt( input_zphot_catalog, dtype='float', usecols={2})
-
-    fig = plt.figure(figsize=(8,8))
-    plt.rcParams.update({'font.size':20})
-    plt.plot([0.0,3.0],[0.0,3.0],color='black')
-    tx = np.where( zphot > 0.0 )[0]
-    plt.hist2d( zphot[tx], ztrue[tx], bins=100, norm=LogNorm(), cmin=1, cmap='Greys')
-    del tx
-    plt.xlabel('Photometric Redshift')
-    plt.ylabel('True Redshift')
-    plt.xlim([0.0,3.0])
-    plt.ylim([0.0,3.0])
-    plt.savefig(output_plot_filename,bbox_inches='tight')
-
-
-
 if __name__ == '__main__':
     run( 'cat.dat', 'zphot.dat', 6, number_of_test_galaxies=20000 )
-    plot_tzpz_hist2d( 'zphot.dat', 'plot_tzpz' )
 
 
 
