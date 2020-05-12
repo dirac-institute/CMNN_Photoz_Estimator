@@ -226,7 +226,7 @@ def make_stats_file(  verbose, runid, stats_COR, input_zbins=None ):
     if verbose: print('Wrote to: ',ofnm)
 
 
-def make_stats_plots( verbose, runid, user_stats=None, show_SRD=True, \
+def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, \
     multi_run_ids=None, multi_run_labels=None, multi_run_colors=['blue','orange','red','green','darkviolet'] ):
 
     ### Make plots for all the photo-z statistics for a given run.
@@ -244,6 +244,15 @@ def make_stats_plots( verbose, runid, user_stats=None, show_SRD=True, \
     if verbose:
         print( ' ' )
         print( 'Starting cmnn_analysis.make_stats_plots(), ', datetime.datetime.now() )
+
+    if runid==None & multi_run_ids==None:
+        print( ' ' )
+        print( 'Error in cmnn_analysis.make_stats_plots()' )
+        print( 'Need to specify input values for at least one of: runid or multi_run_ids.')
+        print( '  runid = ',runid)
+        print( '  multi_run_ids = ',multi_run_ids)
+        print( 'Exit.' )
+        exit()
 
     ### Check user input for multiple runs
     if multi_run_ids == None:

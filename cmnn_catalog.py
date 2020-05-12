@@ -15,24 +15,46 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
         print('Starting cmnn_catalog.make_test_and_train(), ',datetime.datetime.now())
 
     ### Read in the raw catalog of galaxies
-    if verbose: print('Read the raw catalog.')
-    if force_idet:
-        ### Speed up this read by dropping galaxies we don't need:
-        ###  any galaxy that's more than half a mag fainter than the faintest i-band cut
-        if verbose: print('Speed things up using awk to pre-select useful galaxies from big data file.')
-        imagmax = np.max( [ test_mcut[3], train_mcut[3] ] ) + 0.5
-        strimagmax = str(np.round(imagmax,2))
-        if verbose: print("awk '{if ($5<"+strimagmax+") print $0}' LSST_galaxy_catalog_full.dat > temp.dat")
-        os.system("awk '{if ($5<"+strimagmax+") print $0}' LSST_galaxy_catalog_full.dat > temp.dat")
-        all_id = np.loadtxt( 'temp.dat', dtype='float', usecols={0})
-        all_tz = np.loadtxt( 'temp.dat', dtype='float', usecols={1})
-        all_tm = np.loadtxt( 'temp.dat', dtype='float', usecols={2,3,4,5,6,7})
-        if verbose: print('rm temp.dat')
-        os.system('rm temp.dat')
-    else:
-        all_id = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols={0})
-        all_tz = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols={1})
-        all_tm = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols={2,3,4,5,6,7})
+    if verbose: print('Read the mock catalog of true redshifts and magnitudes.')
+
+    ### This commented-out code can be used to speed up the catalog read, under some conditions,
+    ###    IFF the FULL catalog is being used. But that is not the default.
+    # if force_idet:
+    #     ### Speed up this read by dropping galaxies we don't need:
+    #     ###  any galaxy that's more than half a mag fainter than the faintest i-band cut
+    #     if verbose: print('Speed things up using awk to pre-select useful galaxies from big data file.')
+    #     imagmax = np.max( [ test_mcut[3], train_mcut[3] ] ) + 0.5
+    #     strimagmax = str(np.round(imagmax,2))
+    #     if verbose: print("awk '{if ($5<"+strimagmax+") print $0}' LSST_galaxy_catalog_full.dat > temp.dat")
+    #     os.system("awk '{if ($5<"+strimagmax+") print $0}' LSST_galaxy_catalog_full.dat > temp.dat")
+    #     all_id = np.loadtxt( 'temp.dat', dtype='float', usecols={0})
+    #     all_tz = np.loadtxt( 'temp.dat', dtype='float', usecols={1})
+    #     all_tm = np.loadtxt( 'temp.dat', dtype='float', usecols={2,3,4,5,6,7})
+    #     if verbose: print('rm temp.dat')
+    #     os.system('rm temp.dat')
+    # else:
+    #     all_id = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols={0})
+    #     all_tz = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols={1})
+    #     all_tm = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols={2,3,4,5,6,7})
+
+    ### Check if the gzip needs unzipping
+    if (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat' ) == False) & \
+       (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat.gz' ) == True):
+       os.system('gunzip LSST_galaxy_catalog_i25p3.dat.gz')
+
+    if (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat' ) == False) & \
+       (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat.gz' ) == False):
+       print('Error. Mock galaxy catalog file is missing or misnamed.')
+       print('Required to have one of the following:')
+       print('  LSST_galaxy_catalog_i25p3.dat')
+       print('  LSST_galaxy_catalog_i25p3.dat.gz')
+       print('Exit (missing input file).')
+       exit()
+
+    all_id = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols={0})
+    all_tz = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols={1})
+    all_tm = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols={2,3,4,5,6,7})
+
 
     ### Ensure needed quantities are in numpy arrays
     gamma = np.asarray( [0.037,0.038,0.039,0.039,0.04,0.04], dtype='float' )

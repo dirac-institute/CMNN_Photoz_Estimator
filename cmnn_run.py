@@ -33,10 +33,9 @@ def run(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, te
     ### 3. Analyse the photo-z estimates (make statistics and plots of the results)
     os.system("echo 'Start cmnn_analysis.make_stats_file(): "+str(datetime.datetime.now())+\
         "' >> output/run_"+args.user_runid+"/timestamps.dat")
-    cmnn_analysis.make_stats_file(verbose, runid, stats_COR)
-
-    cmnn_analysis.make_stats_plots(verbose, runid)
     cmnn_analysis.make_tzpz_plot(verbose, runid)
+    cmnn_analysis.make_stats_file(verbose, runid, stats_COR)
+    cmnn_analysis.make_stats_plots(verbose=verbose, runid=runid)
 
 
 if __name__ == '__main__':
@@ -61,10 +60,10 @@ if __name__ == '__main__':
     parser.add_argument('--runid', action='store', dest='user_runid', type=str, \
         help='run identifier for output', default='1')
 
-    ### Argument:    runid_clobber, type bool 1, default False
+    ### Argument:    clobber, type bool 1, default False
     ### Description: if True, overwrites any existing output for this runid
-    ### Example:     python cmnn_run.py --runid_clobber True
-    parser.add_argument('--runid_clobber', action='store', dest='user_runid_clobber', type=bool, \
+    ### Example:     python cmnn_run.py --clobber True
+    parser.add_argument('--clobber', action='store', dest='user_clobber', type=bool, \
         help='overwrite existing output for given runid', default=False, choices=[True,False])
 
     ### Argument:    test_m5, type float 6, default 26.1 27.4 27.5 26.8 26.1 24.9 (baseline 10-year depth)
@@ -158,7 +157,7 @@ if __name__ == '__main__':
 
     ### Clobber output if desired (clear output directory)
     if os.path.exists('output/run_'+args.user_runid):
-        if args.user_runid_clobber == True:        
+        if args.user_clobber == True:        
             if args.user_verbose: print('Clobbering output/run_'+args.user_runid)
             os.system('rm -rf output/run_'+args.user_runid)
         else:
@@ -189,12 +188,12 @@ if __name__ == '__main__':
     ###   m5_min   : minimum 5-sigma depths set to a single standard visit (30 second integration)
     ###   m5_max   : maximum 5-sigma depths set to 29th mag for all filters (edge of reason)
     ###   mcut_min : minimum detection cut set to near saturation for a single standard visit (30 sec)
-    ###   mcut_max : same as m5_max
+    ###   mcut_max : same as m5_max, but with i<25 mag to match SRD "gold sample" and to match full catalog limit (LSST_galaxy_catalog_i25p3.dat)
     filters  = ['u','g','r','i','z','y']
     m5_min   = [23.9, 25.0, 24.7, 24.0, 23.3, 22.1]
     m5_max   = [29.0, 29.0, 29.0, 29.0, 29.0, 29.0]
-    mcut_min = [18.0, 18.0, 18.0, 18.0, 18.0, 18.0]
-    mcut_max = [29.0, 29.0, 29.0, 29.0, 29.0, 29.0]
+    mcut_min = [17.0, 17.0, 17.0, 17.0, 17.0, 17.0]
+    mcut_max = [29.0, 29.0, 29.0, 25.0, 29.0, 29.0]
     mfail = False
     message = ''
     for f in range(6):
