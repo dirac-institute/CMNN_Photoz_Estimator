@@ -190,10 +190,10 @@ def make_stats_file(  verbose, runid, stats_COR, input_zbins=None ):
     ### Setup the redshift bins, the default is overlapping bins
     if input_zbins == None:
         temp = []
-        zlow = float(0.30)
-        zhi  = float(0.60)
+        zlow = float(0.00)
+        zhi  = float(0.30)
         temp.append( [zlow,zhi] )
-        for z in range(16):
+        for z in range(18):
             zlow += float(0.15)
             zhi  += float(0.15)
             temp.append( [zlow,zhi] )
@@ -226,7 +226,7 @@ def make_stats_file(  verbose, runid, stats_COR, input_zbins=None ):
     if verbose: print('Wrote to: ',ofnm)
 
 
-def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, \
+def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, show_binw=True, \
     multi_run_ids=None, multi_run_labels=None, multi_run_colors=['blue','orange','red','green','darkviolet'] ):
 
     ### Make plots for all the photo-z statistics for a given run.
@@ -245,14 +245,15 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
         print( ' ' )
         print( 'Starting cmnn_analysis.make_stats_plots(), ', datetime.datetime.now() )
 
-    if runid==None & multi_run_ids==None:
-        print( ' ' )
-        print( 'Error in cmnn_analysis.make_stats_plots()' )
-        print( 'Need to specify input values for at least one of: runid or multi_run_ids.')
-        print( '  runid = ',runid)
-        print( '  multi_run_ids = ',multi_run_ids)
-        print( 'Exit.' )
-        exit()
+    if runid==None:
+        if multi_run_ids==None:
+            print( ' ' )
+            print( 'Error in cmnn_analysis.make_stats_plots()' )
+            print( 'Need to specify input values for at least one of: runid or multi_run_ids.')
+            print( '  runid = ',runid)
+            print( '  multi_run_ids = ',multi_run_ids)
+            print( 'Exit.' )
+            exit()
 
     ### Check user input for multiple runs
     if multi_run_ids == None:
@@ -323,26 +324,35 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
         if show_SRD == True:
             ### Fraction of Outliers, 10%
             if syc == 4:
-                plt.axhline( 0.10, lw=2, alpha=1, ls='dashed', color='black')
+                plt.plot( [0.3,3.0], [0.10,0.10], lw=2, alpha=1, ls='dashed', color='black', label='SRD')
             ### Standard Deviation, 0.02
             if ( syc == 5 ) | ( syc == 7 ) | ( syc == 8 ) | ( syc == 10 ) | ( syc == 12 ) | ( syc == 13 ) :
-                plt.axhline( 0.02, lw=2, alpha=1, ls='dashed', color='black')
+                plt.plot( [0.3,3.0], [0.02,0.02], lw=2, alpha=1, ls='dashed', color='black', label='SRD')
             ### Bias, +/- 0.003
             if ( syc == 6 ) | ( syc == 9 ) | ( syc == 11 ) | ( syc == 14 ):
-                plt.axhline( -0.003, lw=2, alpha=1, ls='dashed', color='black')
-                plt.axhline( 0.003, lw=2, alpha=1, ls='dashed', color='black')
+                plt.plot( [0.3,3.0], [-0.003,-0.003], lw=2, alpha=1, ls='dashed', color='black', label='SRD')
+                plt.plot( [0.3,3.0], [0.003,0.003], lw=2, alpha=1, ls='dashed', color='black')
 
         pfnm_suffix = ''
         for r,runid in enumerate(multi_run_ids):
             pfnm_suffix += '_'+runid
             ### Read in the statistical measures
             sfnm = 'output/run_'+runid+'/stats.dat'
+            ## If we're showing the bins as horizontal bars
+            if show_binw:
+                binlo = np.loadtxt( sfnm, dtype='float', usecols={0} )
+                binhi = np.loadtxt( sfnm, dtype='float', usecols={1} )
             xvals = np.loadtxt( sfnm, dtype='float', usecols={sxc} )
             yvals = np.loadtxt( sfnm, dtype='float', usecols={syc} )
             if stats_yecols[s] > 0:
                 eyvals = np.loadtxt( sfnm, dtype='float', usecols={stats_yecols[s]} )
             ### Plot the values, with error bars if appropriate
             plt.plot( xvals, yvals, lw=3, alpha=0.75, color=multi_run_colors[r], label=multi_run_labels[r] )
+            ## If we're showing the bins as horizontal bars
+            if show_binw:
+                for y,yv in enumerate(yvals):
+                    plt.plot( [binlo[y],binhi[y]], [yv,yv], lw=1, alpha=0.5, color=multi_run_colors[r] )
+                del binlo,binhi
             if stats_yecols[s] > 0:
                 plt.errorbar( xvals, yvals, yerr=eyvals, fmt='none', elinewidth=3, capsize=3, capthick=3, ecolor=multi_run_colors[r] )
                 del eyvals
