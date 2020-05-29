@@ -38,8 +38,9 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
     ### Only calculate the thresholds for training galaxies that could conceivably be a CMNN
     tx = np.where( ( np.isfinite(MahalanobisDistance) ) & ( np.isfinite(DegreesOfFreedom) ) &\
      (DegreesOfFreedom >= minimum_Ncolors) & (MahalanobisDistance <= thresh_table[-1]) )[0]
-    for i in tx:
-        thresholds[i] = thresh_table[ DegreesOfFreedom[i] ]
+    if len(tx) >= 1:
+        for i in tx:
+            thresholds[i] = thresh_table[ DegreesOfFreedom[i] ]
     del tx
 
     ### Identify the indicies of the CMNN subset of training-set galaxies
@@ -48,7 +49,8 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
         ( np.isfinite(MahalanobisDistance) ) & \
         ( np.isfinite(DegreesOfFreedom) ) & \
         ( DegreesOfFreedom >= minimum_Ncolors ) & \
-        ( MahalanobisDistance > 0.000 ) & \
+        ( thresholds > 0.0010 ) & \
+        ( MahalanobisDistance > 0.00010 ) & \
         ( MahalanobisDistance < thresholds ) )[0]
 
     ### Determine the photometric redshift for this test galaxy
