@@ -98,7 +98,7 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
             ( np.isfinite(MahalanobisDistance) ) & \
             ( np.isfinite(DegreesOfFreedom) ) & \
             ( DegreesOfFreedom >= minimum_Ncolors ) & \
-            ( thresholds > 0.0010 ) & \
+            # ( thresholds > 0.0010 ) & \
             ( MahalanobisDistance > 0.00010 ) )[0] # & \
             # ( MahalanobisDistance < thresholds ) )[0]
 
