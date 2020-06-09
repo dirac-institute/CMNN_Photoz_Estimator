@@ -28,9 +28,11 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
     ###   PhotozError : the uncertainty in the photo-z for the test galaxy
     ###   NMC         : the number of training-set galaxies in the color-matched subset
 
-    ### Calculate the Mahalanobis Distance and the number of degrees of freedom for each training set galaxy
+    ### Calculate the Mahalanobis Distance for each training set galaxy
     MahalanobisDistance = np.nansum( ( test_c - train_c )**2 / test_ce**2, axis=1 )
-    DegreesOfFreedom    = np.nansum( ( test_c - train_c ) / ( test_c - train_c ), axis=1 )
+
+    ### Calculate the Degrees of Freedom for each training set galaxy
+    DegreesOfFreedom    = np.nansum( ( test_c - train_c ) / ( test_c - train_c ), axis=1, dtype='int' )
 
     ### Determine the appropriate threshold that should apply to each training set galaxy
     ###   Could do the slow way:  thresholds = chi2.ppf( ppf_value, DegreesOfFreedom )
