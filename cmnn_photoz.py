@@ -35,14 +35,14 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
     DegreesOfFreedom    = np.nansum( ( test_c - train_c ) / ( test_c - train_c ), axis=1, dtype='int' )
 
     ### Determine the appropriate threshold that should apply to each training set galaxy
-    ###   Could do the slow way:  thresholds = chi2.ppf( ppf_value, DegreesOfFreedom )
+    ### We use a look-up table; the slow way is: thresholds = chi2.ppf( ppf_value, DegreesOfFreedom )
     thresholds = np.zeros( len(train_c), dtype='float' )
+
     ### Only calculate the thresholds for training galaxies that could conceivably be a CMNN
     tx = np.where( ( np.isfinite(MahalanobisDistance) ) & ( np.isfinite(DegreesOfFreedom) ) &\
      (DegreesOfFreedom >= minimum_Ncolors) & (MahalanobisDistance <= thresh_table[-1]) )[0]
     if len(tx) >= 1:
-        for i in tx:
-            thresholds[i] = thresh_table[ DegreesOfFreedom[i] ]
+        thresholds[tx] = thresh_table[ DegreesOfFreedom[tx] ]
     del tx
 
     ### Identify the indicies of the CMNN subset of training-set galaxies
@@ -93,8 +93,14 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
     ### if there are too few training-set galaxies in the CMNN subset
     if len(index) < minimum_Nneighbors:
         ### find out how many there are we could potentially use
-        index2 = np.where( ( np.isfinite(MahalanobisDistance) ) & ( np.isfinite(DegreesOfFreedom) ) & \
-            (MahalanobisDistance > 0.0) & (DegreesOfFreedom >= minimum_Ncolors) )[0]
+        index2 = np.where( \
+            ( test_id != train_id ) & \
+            ( np.isfinite(MahalanobisDistance) ) & \
+            ( np.isfinite(DegreesOfFreedom) ) & \
+            ( DegreesOfFreedom >= minimum_Ncolors ) & \
+            ( thresholds > 0.0010 ) & \
+            ( MahalanobisDistance > 0.00010 ) )[0] # & \
+            # ( MahalanobisDistance < thresholds ) )[0]
 
         ### if there's more than the minimum number, use them
         if len(index2) >= minimum_Nneighbors:
@@ -102,13 +108,13 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
             tempTZ = train_z[index2]
             tempDF = DegreesOfFreedom[index2]
             ### identify the nearest neighbors and use them as the CMNN subset
+            ### create a sorted list of minimum_Nneighbors
             sx = np.argsort( tempMD )
             new_MD = np.asarray( tempMD[sx[0:minimum_Nneighbors]], dtype='float' )
             new_TZ = np.asarray( tempTZ[sx[0:minimum_Nneighbors]], dtype='float' )
-            new_DF = np.asarray( tempDF[sx[0:minimum_Nneighbors]], dtype='float' )
+            new_DF = np.asarray( tempDF[sx[0:minimum_Nneighbors]], dtype='int' )
             del tempMD,tempTZ,tempDF,sx
             ### calculate the new 'effective PPF' based on the most distant nearest neighbor
-            # new_ppf_value = chi2.cdf( new_MD[minimum_Nneighbors-1], new_DF[minimum_Nneighbors-1] )
             new_ppf_value = chi2.cdf( new_MD[-1], new_DF[-1] )
             ### inflate the photo-z error appropriately
             temp   = np.std( new_TZ )
