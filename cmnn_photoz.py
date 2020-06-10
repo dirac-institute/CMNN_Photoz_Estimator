@@ -26,7 +26,7 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
     ### Outputs returned
     ###   Photoz      : the photometric redshift for the test galaxy
     ###   PhotozError : the uncertainty in the photo-z for the test galaxy
-    ###   NMC         : the number of training-set galaxies in the color-matched subset
+    ###   Ncm         : the number of training-set galaxies in the color-matched subset
 
     ### Calculate the Mahalanobis Distance for each training set galaxy
     MahalanobisDistance = np.nansum( ( test_c - train_c )**2 / test_ce**2, axis=1 )
@@ -39,8 +39,11 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
     thresholds = np.zeros( len(train_c), dtype='float' )
 
     ### Only calculate the thresholds for training galaxies that could conceivably be a CMNN
-    tx = np.where( ( np.isfinite(MahalanobisDistance) ) & ( np.isfinite(DegreesOfFreedom) ) &\
-     (DegreesOfFreedom >= minimum_Ncolors) & (MahalanobisDistance <= thresh_table[-1]) )[0]
+    tx = np.where( \
+        ( np.isfinite(MahalanobisDistance) ) & \
+        ( np.isfinite(DegreesOfFreedom) ) & \
+        ( DegreesOfFreedom >= minimum_Ncolors ) & \
+        ( MahalanobisDistance <= thresh_table[-1] ) )[0]
     if len(tx) >= 1:
         thresholds[tx] = thresh_table[ DegreesOfFreedom[tx] ]
     del tx
@@ -53,14 +56,14 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
         ( DegreesOfFreedom >= minimum_Ncolors ) & \
         ( thresholds > 0.0010 ) & \
         ( MahalanobisDistance > 0.00010 ) & \
-        ( MahalanobisDistance < thresholds ) )[0]
+        ( MahalanobisDistance <= thresholds ) )[0]
 
     ### Determine the photometric redshift for this test galaxy
     ### if there are a sufficient number of training-set galaxies in the CMNN subset
     if len(index) >= minimum_Nneighbors:
         ### choose randomly from the color matched sample
         if selection_mode == 0:
-            rval  = int(np.random.uniform(low=0, high=len(index)-1))
+            rval  = int(np.random.uniform(low=0, high=len(index)))
             rival = index[rval]
             Photoz      = train_z[rival]
             PhotozError = np.std( train_z[index] )
@@ -72,7 +75,7 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
                 rval = int(tx)
             if len(tx) > 1:
                 # if there's more than one best match, choose randomly
-                tval = np.random.uniform(low=0,high=len(tx)-1)
+                tval = np.random.uniform(low=0,high=len(tx))
                 rval = int(tx[tval])
                 del tval
             rival = index[rval]
@@ -88,7 +91,7 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
             Photoz      = train_z[rival]
             PhotozError = np.std( train_z[index] )
             del tweight,weight,rval,rival
-        NMC = len(index)
+        Ncm = len(index)
 
     ### if there are too few training-set galaxies in the CMNN subset
     if len(index) < minimum_Nneighbors:
@@ -122,7 +125,7 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
             del temp,new_ppf_value
             ### choose randomly from nearest dselect galaxies
             if selection_mode == 0:
-                rval   = int( np.floor( np.random.uniform(low=0, high=len(new_TZ)-1) ) )
+                rval   = int( np.floor( np.random.uniform(low=0, high=minimum_Nneighbors) ) )
                 Photoz = new_TZ[rval]
                 del rval
             ### choose nearest neighbour, use nearest dselect for error
@@ -137,19 +140,19 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
                 del tweight,weight,cx
             del new_MD,new_TZ,new_DF
             ### set the number in the CMNN subset to be minimum_Nneighbors
-            NMC = minimum_Nneighbors
+            Ncm = minimum_Nneighbors
 
         ### if there's not enough training-set galaxies this is probably a bad test galaxy anway
         else:
             Photoz = -99.99
             PhotozError = -99.99
-            NMC = 0
+            Ncm = 0
 
         del index2
 
     del index, MahalanobisDistance, DegreesOfFreedom, thresholds 
 
-    return [Photoz, PhotozError, NMC]
+    return [Photoz, PhotozError, Ncm]
 
 
 def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, cmnn_ppmag, cmnn_ppclr):
@@ -177,6 +180,8 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
     cmnn_thresh_table = np.zeros( 6, dtype='float' )
     for i in range(6):
         cmnn_thresh_table[i] = chi2.ppf(cmnn_ppf,i)
+    ### Don't let there be a 'NaN' in the threshold table, just set to = 0.00
+    cmnn_thresh_table[0] = float(0.00)
 
     ### Prepare for a magnitude pre-cut on the training set
     if (cmnn_ppmag == True) & (force_idet == False):
@@ -187,7 +192,8 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
         exit()
     if (cmnn_ppmag == True) & (force_idet == True):
         ppmag_sorted_train_imags = np.sort( all_train_m[:,3] )
-        ppmag_fractions = np.asarray( range(len(ppmag_sorted_train_imags)), dtype='float')/float(len(ppmag_sorted_train_imags))
+        ppmag_fractions = np.asarray( range(len(ppmag_sorted_train_imags)), dtype='float') /\
+        float(len(ppmag_sorted_train_imags))
 
 
     ### Calculate photometric redshifts for all test-set galaxies and write to zphot file
@@ -243,7 +249,8 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
             results = return_photoz( all_test_c[i], all_test_ce[i], all_test_id[i], \
                 all_train_c, all_train_tz, all_train_id, \
                 cmnn_ppf, cmnn_thresh_table, cmnn_rsel, cmnn_minNc, cmnn_minNN)       
-        fout.write( '%10i %6.4f %6.4f %6.4f %10i \n' % (all_test_id[i], all_test_tz[i], results[0], results[1], results[2]) )
+        fout.write( '%10i %6.4f %6.4f %6.4f %10i \n' % \
+            (all_test_id[i], all_test_tz[i], results[0], results[1], results[2]) )
     fout.close()
     if verbose: print('Wrote to: output/run_'+runid+'/zphot.cat')
 

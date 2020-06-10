@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import datetime
 
 
-def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, test_N, train_N, cmnn_minNc):
+def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, \
+    test_N, train_N, cmnn_minNc):
 
     ### Make test and training set catalogs based on user input.
     ### All inputs are described in cmnn_run.py, and they are assumed to
@@ -18,7 +19,7 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
     if verbose: print('Read the mock catalog of true redshifts and magnitudes.')
 
     ### This commented-out code can be used to speed up the catalog read, under some conditions,
-    ###    IFF the FULL catalog is being used. But that is not the default.
+    ###    BUT ONLY WHEN the FULL catalog is being used. But that is not the default.
     # if force_idet:
     #     ### Speed up this read by dropping galaxies we don't need:
     #     ###  any galaxy that's more than half a mag fainter than the faintest i-band cut
@@ -40,21 +41,20 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
     ### Check if the gzip needs unzipping
     if (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat' ) == False) & \
        (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat.gz' ) == True):
-       os.system('gunzip LSST_galaxy_catalog_i25p3.dat.gz')
+        os.system('gunzip LSST_galaxy_catalog_i25p3.dat.gz')
 
     if (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat' ) == False) & \
        (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat.gz' ) == False):
-       print('Error. Mock galaxy catalog file is missing or misnamed.')
-       print('Required to have one of the following:')
-       print('  LSST_galaxy_catalog_i25p3.dat')
-       print('  LSST_galaxy_catalog_i25p3.dat.gz')
-       print('Exit (missing input file).')
-       exit()
+        print('Error. Mock galaxy catalog file is missing or misnamed.')
+        print('Required to have one of the following:')
+        print('  LSST_galaxy_catalog_i25p3.dat')
+        print('  LSST_galaxy_catalog_i25p3.dat.gz')
+        print('Exit (missing input file).')
+        exit()
 
     all_id = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols={0})
     all_tz = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols={1})
     all_tm = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols={2,3,4,5,6,7})
-
 
     ### Ensure needed quantities are in numpy arrays
     gamma = np.asarray( [0.037,0.038,0.039,0.039,0.04,0.04], dtype='float' )
@@ -81,6 +81,17 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
     if verbose: print('Calculating observed apparent magnitudes.')
     all_test_m = all_tm + all_test_me * np.random.normal( size = (len(all_tm),6) )
     all_train_m = all_tm + all_train_me * np.random.normal( size = (len(all_tm),6) )
+
+    ### Do not allow (tm-m5) > 3, because then me = 3
+    for f in range(6):
+        tx = np.where( all_tm[:,f] > np_test_m5[f]+3.0 )[0]
+        all_test_me[tx] = float('NaN')
+        all_test_m[tx] = float('NaN')
+        del tx
+        tx = np.where( all_tm[:,f] > np_train_m5[f]+3.0 )[0]
+        all_train_me[tx] = float('NaN')
+        all_train_m[tx] = float('NaN')
+        del tx
 
     ### Apply the magnitude cuts, set values to float('NaN') if not detected
     ### If the user desired to force a detection in i-band, then for all galaxies
@@ -224,8 +235,10 @@ def make_plots(verbose, runid):
         train_y = np.zeros( 41, dtype='float' )
         for m,mbin in enumerate(mbins):
             if m > 0:
-                tex = np.where( (test_m[:,f]  > mbins[m-1]) & (test_m[:,f] <= mbins[m])  & (np.isfinite(test_m[:,f])) )[0]
-                trx = np.where( (train_m[:,f] > mbins[m-1]) & (train_m[:,f] <= mbins[m]) & (np.isfinite(train_m[:,f])) )[0]
+                tex = np.where( (test_m[:,f]  > mbins[m-1]) & (test_m[:,f] <= mbins[m])  & \
+                    (np.isfinite(test_m[:,f])) )[0]
+                trx = np.where( (train_m[:,f] > mbins[m-1]) & (train_m[:,f] <= mbins[m]) & \
+                    (np.isfinite(train_m[:,f])) )[0]
                 test_y[m] = float(len(tex)) / Ntest
                 train_y[m] = float(len(trx)) / Ntrain
                 del tex,trx
@@ -233,8 +246,10 @@ def make_plots(verbose, runid):
                     ls='solid',lw=2,alpha=1,color=filt_colors[f] )
                 plt.plot( [mbins[m-1],mbins[m-1],mbins[m]], [train_y[m-1],train_y[m],train_y[m]], \
                     ls='solid',lw=4,alpha=0.5,color=filt_colors[f] )
-        plt.plot( [mbins[-1],mbins[-1]], [test_y[m],0.0], ls='solid',lw=2,alpha=1,color=filt_colors[f],label=filt_names[f]+' test')
-        plt.plot( [mbins[-1],mbins[-1]], [train_y[m],0.0], ls='solid',lw=4,alpha=0.5,color=filt_colors[f],label=filt_names[f]+' train')
+        plt.plot( [mbins[-1],mbins[-1]], [test_y[m],0.0], \
+            ls='solid',lw=2,alpha=1,color=filt_colors[f],label=filt_names[f]+' test')
+        plt.plot( [mbins[-1],mbins[-1]], [train_y[m],0.0], \
+            ls='solid',lw=4,alpha=0.5,color=filt_colors[f],label=filt_names[f]+' train')
         del test_y,train_y,Ntest,Ntrain
     del mbw,mbins
     plt.xlabel('Apparent Magnitude')
