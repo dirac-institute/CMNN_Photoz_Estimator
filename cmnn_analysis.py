@@ -187,6 +187,9 @@ def make_stats_file(  verbose, runid, stats_COR, input_zbins=None ):
         print(' ')
         print('Starting cmnn_analysis.make_stats_file(), ',datetime.datetime.now())
 
+    if os.path.isdir('output/run_'+runid+'/analysis') == False :
+        os.system('mkdir output/run_'+runid+'/analysis')
+
     ### Setup the redshift bins, the default is overlapping bins
     if input_zbins == None:
         temp = []
@@ -209,7 +212,7 @@ def make_stats_file(  verbose, runid, stats_COR, input_zbins=None ):
 
     ### Open the output file for writing
     ### Then loop over all zbins, obtain the statistical measures, and write them to file
-    ofnm = 'output/run_'+runid+'/stats.dat'
+    ofnm = 'output/run_'+runid+'/analysis/stats.dat'
     fout = open(ofnm,'w')
     fout.write('# zlow zhi meanz CORmeanz fout '+\
         'stdd bias IQR IQRstdd IQRbias CORstdd CORbias CORIQR CORIQRstdd CORIQRbias '+\
@@ -254,6 +257,14 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
             print( '  multi_run_ids = ',multi_run_ids)
             print( 'Exit.' )
             exit()
+
+    ### Check that cmnn_analysis.make_stats_file has been run already
+    if os.path.exists('output/run_'+runid+'/analysis/stats.dat') == False:
+        print( ' ' )
+        print( 'Error, file does not exist: output/run_'+runid+'/analysis/stats.dat')
+        print( 'Need to run cmnn_analysis.make_stats_file() first.')
+        print( 'Exit.' )
+        exit()
 
     ### Check user input for multiple runs
     if multi_run_ids == None:
@@ -337,7 +348,7 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
         for r,runid in enumerate(multi_run_ids):
             pfnm_suffix += '_'+runid
             ### Read in the statistical measures
-            sfnm = 'output/run_'+runid+'/stats.dat'
+            sfnm = 'output/run_'+runid+'/analysis/stats.dat'
             ## If we're showing the bins as horizontal bars
             if show_binw:
                 binlo = np.loadtxt( sfnm, dtype='float', usecols={0} )
@@ -365,7 +376,7 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
         # legend.get_title().set_fontsize('14') 
 
         if len(multi_run_ids) == 1:
-            pfnm = 'output/run_'+multi_run_ids[0]+'/'+stat
+            pfnm = 'output/run_'+multi_run_ids[0]+'/analysis/'+stat
         if len(multi_run_ids) > 1:
             pfnm = 'output/stats_plots/'+stat+pfnm_suffix
             if os.path.exists('output/stats_plots') == False:
@@ -381,47 +392,49 @@ def make_tzpz_plot( verbose, runid, \
     polygons_draw=False, polygons_vertices=None, polygons_color='green', \
     outliers_show=True, outliers_color='red', outliers_label=False):
 
-    # Plot of true redshift vs. photometric redshift as a 2d histogram,
-    #  with options to add polygons to define regions and/or show outliers as points.
+    ### Plot of true redshift vs. photometric redshift as a 2d histogram,
+    ###  with options to add polygons to define regions and/or show outliers as points.
 
-    # Plotting parameters
-    #  polygons_draw         =  True/False; if True polygons are drawn
-    #  polygons_vertices     =  an array of x and y vertices for N polygonse
-    #  polygons_color        =  line color for polygons
-    #  outliers_show         =  True/False; if True outliers are shown as points
-    #  outliers_color        =  point color for outliers
-    #  outliers_label        =  True/False; if True outliers are labeled in a legend
+    ### Plotting parameters
+    ###  polygons_draw         =  True/False; if True polygons are drawn
+    ###  polygons_vertices     =  an array of x and y vertices for N polygonse
+    ###  polygons_color        =  line color for polygons
+    ###  outliers_show         =  True/False; if True outliers are shown as points
+    ###  outliers_color        =  point color for outliers
+    ###  outliers_label        =  True/False; if True outliers are labeled in a legend
 
     if verbose:
         print(' ')
         print('Starting cmnn_analysis.make_tzpz_plot(), ',datetime.datetime.now())
 
-    # Read in the data
+    ### Read in the data
     fnm = 'output/run_'+runid+'/zphot.cat'
     ztrue = np.loadtxt( fnm, dtype='float', usecols={1})
     zphot = np.loadtxt( fnm, dtype='float', usecols={2})
+    Ncm   = np.loadtxt( fnm, dtype='int', usecols={4})
 
-    # Initialize the plot
+    ### Initialize the plot
     fig = plt.figure(figsize=(8,8))
     plt.rcParams.update({'font.size':20})
 
-    # Draw a line of y=x to guide the eye
+    ### Draw a line of y=x to guide the eye
     plt.plot([0.0,3.0],[0.0,3.0],color='black')
 
-    # Draw polygons
-    #  Example: if you want two boxes centered on (0.25,0.50) and (2.0,1.2):
-    #  polygons_vertices = [ [ [0.2,0.3,0.3,0.2,0.2], [0.45,0.45,0.55,0.55,0.45] ], \
-    #                        [ [1.9,2.1,2.1,1.9,1.9], [1.1,1.1,1.3,1.3,1.1] ] ]
+    ### Draw polygons
+    ###  Example: if you want two boxes centered on (0.25,0.50) and (2.0,1.2):
+    ###  polygons_vertices = [ [ [0.2,0.3,0.3,0.2,0.2], [0.45,0.45,0.55,0.55,0.45] ], \
+    ###                        [ [1.9,2.1,2.1,1.9,1.9], [1.1,1.1,1.3,1.3,1.1] ] ]
     if polygons_draw == True:
         for v in polygons_vertices:
             plt.plot( v[0], v[1], color=polygons_color, lw=2, alpha=1)
 
-    # Include all test galaxies with a measured zphot in the 2d histogram
+    ### Include all test galaxies with a measured zphot in the 2d histogram
     tx = np.where( zphot > 0.0 )[0]
-    plt.hist2d( zphot[tx], ztrue[tx], bins=100, range=[[0.0,3.0],[0.0,3.0]], norm=LogNorm(clip=True), cmin=1, cmap='Greys')
+    plt.hist2d( zphot[tx], ztrue[tx], bins=100, range=[[0.0,3.0],[0.0,3.0]], norm=LogNorm(clip=True), \
+        cmin=1, cmap='Greys')
     del tx
 
-    # Overplot the outliers as points
+    ### Overplot the outliers as points
     if outliers_show:
         tmp_x      = np.where( (zphot > 0.3) & (zphot < 3.0) )[0]
         tmp_ztrue  = ztrue[tmp_x]
@@ -432,13 +445,15 @@ def make_tzpz_plot( verbose, runid, \
         threesigma = 3.0 * sigma
         ox = np.where( ( np.fabs( tmp_dz ) > 0.06 ) & ( np.fabs( tmp_dz ) > threesigma ) )[0]
         if outliers_label:
-            plt.plot( tmp_zphot[ox], tmp_ztrue[ox], 'o', ms=2, alpha=0.4, color=outliers_color, markeredgewidth=0, label='outlier')
+            plt.plot( tmp_zphot[ox], tmp_ztrue[ox], 'o', ms=2, alpha=0.4, color=outliers_color, \
+                markeredgewidth=0, label='outlier')
         else:
-            plt.plot( tmp_zphot[ox], tmp_ztrue[ox], 'o', ms=2, alpha=0.4, color=outliers_color, markeredgewidth=0)
+            plt.plot( tmp_zphot[ox], tmp_ztrue[ox], 'o', ms=2, alpha=0.4, color=outliers_color, \
+                markeredgewidth=0)
         del tmp_x, tmp_ztrue, tmp_zphot, tmp_dz
         del q75, q25, sigma, threesigma, ox
 
-    # Set axis parameters and write plot to file
+    ### Set axis parameters and write plot to file
     plt.xlabel('Photometric Redshift')
     plt.ylabel('True Redshift')
     plt.xlim([0.0,3.0])
@@ -449,3 +464,5 @@ def make_tzpz_plot( verbose, runid, \
     ofnm = 'output/run_'+runid+'/tzpz'
     plt.savefig(ofnm,bbox_inches='tight')
     if verbose: print('Wrote to: ',ofnm)
+
+

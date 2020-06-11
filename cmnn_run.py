@@ -28,7 +28,8 @@ def run(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, te
     ### 2. Estimate photometric redshifts
     os.system("echo 'Start cmnn_photoz.make_zphot(): "+str(datetime.datetime.now())+\
         "' >> output/run_"+args.user_runid+"/timestamps.dat")
-    cmnn_photoz.make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, cmnn_ppmag, cmnn_ppclr)
+    cmnn_photoz.make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, \
+        cmnn_ppmag, cmnn_ppclr)
 
     ### 3. Analyse the photo-z estimates (make statistics and plots of the results)
     os.system("echo 'Start cmnn_analysis.make_stats_file(): "+str(datetime.datetime.now())+\
@@ -168,7 +169,8 @@ if __name__ == '__main__':
 
     os.system('mkdir output/run_'+args.user_runid)
     os.system('touch output/run_'+args.user_runid+'/timestamps.dat')   
-    os.system("echo 'File initiated: "+str(datetime.datetime.now())+"' >> output/run_"+args.user_runid+"/timestamps.dat")
+    os.system("echo 'File initiated: "+str(datetime.datetime.now())+\
+        "' >> output/run_"+args.user_runid+"/timestamps.dat")
 
     ### User must pass 6 magnitudes for each of the test/train depths/cuts
     if (len(args.user_test_m5) != 6) | (len(args.user_train_m5) != 6) | \
@@ -187,8 +189,8 @@ if __name__ == '__main__':
     ### Set the minimum and maximum magnitudes allowed for simulating LSST data
     ###   m5_min   : minimum 5-sigma depths set to a single standard visit (30 second integration)
     ###   m5_max   : maximum 5-sigma depths set to 29th mag for all filters (edge of reason)
-    ###   mcut_min : minimum detection cut set to near saturation for a single standard visit (30 sec)
-    ###   mcut_max : same as m5_max, but with i<25 mag to match SRD "gold sample" and to match full catalog limit (LSST_galaxy_catalog_i25p3.dat)
+    ###   mcut_min : minimum cut set to near saturation for a single standard visit (30 sec)
+    ###   mcut_max : =m5_max, except i<25 mag to match SRD "gold sample" (and match provided catalog)
     filters  = ['u','g','r','i','z','y']
     m5_min   = [23.9, 25.0, 24.7, 24.0, 23.3, 22.1]
     m5_max   = [29.0, 29.0, 29.0, 29.0, 29.0, 29.0]
@@ -306,7 +308,8 @@ if __name__ == '__main__':
     ### Pass user input to run()
     if args.user_verbose: print(' ')
     if args.user_verbose: print('Starting cmnn_run.run: ', datetime.datetime.now())
-    os.system("echo 'Start cmnn_run.run():  "+str(datetime.datetime.now())+"' >> output/run_"+args.user_runid+"/timestamps.dat")
+    os.system("echo 'Start cmnn_run.run():  "+str(datetime.datetime.now())+\
+        "' >> output/run_"+args.user_runid+"/timestamps.dat")
     run( args.user_verbose, args.user_runid, \
         args.user_test_m5, args.user_train_m5, args.user_test_mcut, args.user_train_mcut, \
         args.user_force_idet, \
@@ -315,5 +318,6 @@ if __name__ == '__main__':
         args.user_cmnn_ppmag, args.user_cmnn_ppclr, \
         args.user_stats_COR )
     if args.user_verbose: print('Finished cmnn_run.run: ', datetime.datetime.now())
-    os.system("echo 'Finished cmnn_run.run(): "+str(datetime.datetime.now())+"' >> output/run_"+args.user_runid+"/timestamps.dat")
+    os.system("echo 'Finished cmnn_run.run(): "+str(datetime.datetime.now())+\
+        "' >> output/run_"+args.user_runid+"/timestamps.dat")
 

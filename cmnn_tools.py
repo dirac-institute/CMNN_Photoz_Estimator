@@ -44,3 +44,33 @@ def convert_year_to_depths_baseline( year, BL_visits_10yr = [56, 80, 184, 184, 1
     depths = m5s + ( 1.25 * np.log10( BLv * yr / 10.0 ) )
     
     return depths
+
+
+def calculate_magnitude_error( filt='i', truemag=25.0, m5=25.58, gammas=[0.037,0.038,0.039,0.039,0.04,0.04] ):
+    ### Calculate the error in observed apparent magnitude.
+
+    ### Input
+    ###   filter  : one of 'u', 'g', 'r', 'i', 'z', or 'y' (default 'i')
+    ###   truemag : galaxy true catalog magnitude in filter (default 25, typical i-band cut)
+    ###   m5      : LSST 5-sigma limiting magnitude depth in filter (default 25.58, year 1 baseline depth in i)
+    ###   gammas  : gamma values to use for LSST filters ugrizy (default values from Ivezic+2019)
+    print( 'Inputs: ', filt, truemag, m5, gammas)
+
+    ### Output
+    ###   error : the error in observed apparent magnitude
+
+    all_filts = np.asarray( ['u','g','r','i','z','y'], dtype='str' )
+    fx = np.where( all_filts == filt )[0]
+    if len(fx) != 1:
+        print( 'Passed argument for filt must be one of: u, g, r, i, z, or y.' )
+        print( 'Not recognized: filt = ', filt )
+        print( 'Exit (bad value for filt).' )
+
+    gamma = gammas[fx[0]]
+
+    error = np.sqrt( ( 0.04 - gamma ) * ( np.power( 10.0, 0.4*( truemag - m5 ) ) ) + \
+        gamma * ( np.power( 10.0, 0.4*( truemag - m5 ) )**2 ) )
+
+    return error
+
+
