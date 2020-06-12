@@ -7,6 +7,17 @@ import cmnn_analysis
 # import cmnn_tools
 
 
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 def run(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, test_N, train_N, \
     cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, cmnn_ppmag, cmnn_ppclr, stats_COR):
 
@@ -51,7 +62,7 @@ if __name__ == '__main__':
     ### Argument:    verbose, type bool, default value False
     ### Description: if True, prints more intermediate information to the screen
     ### Example:     python cmnn_run.py --verbose False
-    parser.add_argument('--verbose', action='store', dest='user_verbose', type=bool, \
+    parser.add_argument('--verbose', action='store', dest='user_verbose', type=str2bool, \
         help='print more information to the screen', default=True)
 
     ### Argument:    runid, type str, default value 1
@@ -64,7 +75,7 @@ if __name__ == '__main__':
     ### Argument:    clobber, type bool 1, default False
     ### Description: if True, overwrites any existing output for this runid
     ### Example:     python cmnn_run.py --clobber True
-    parser.add_argument('--clobber', action='store', dest='user_clobber', type=bool, \
+    parser.add_argument('--clobber', action='store', dest='user_clobber', type=str2bool, \
         help='overwrite existing output for given runid', default=False, choices=[True,False])
 
     ### Argument:    test_m5, type float 6, default 26.1 27.4 27.5 26.8 26.1 24.9 (baseline 10-year depth)
@@ -94,7 +105,7 @@ if __name__ == '__main__':
     ### Argument:    force_idet, type bool 1, default True
     ### Description: force detection in i-band for all test and train galaxies
     ### Example:     python cmnn_run.py --force_idet False
-    parser.add_argument('--force_idet', action='store', dest='user_force_idet', type=bool, \
+    parser.add_argument('--force_idet', action='store', dest='user_force_idet', type=str2bool, \
         help='force i-band detection for all galaxies', default=True, choices=[True,False])
 
     ### Argument:    test_N, type int 1, default 40000
@@ -139,13 +150,13 @@ if __name__ == '__main__':
     ### Argument:    cmnn_ppmag, type bool 1, default False
     ### Description: apply a "pseudo-prior" to the training set based on the test-set's i-band magnitude
     ### Example:     python cmnn_run.py --cmnn_ppmag True
-    parser.add_argument('--cmnn_ppmag', action='store', dest='user_cmnn_ppmag', type=bool, \
+    parser.add_argument('--cmnn_ppmag', action='store', dest='user_cmnn_ppmag', type=str2bool, \
         help='CMNN: apply magnitude pre-cut to training set', default=False, choices=[True,False])
 
     ### Argument:    cmnn_ppclr, type bool 1, default True
     ### Description: apply a "pseudo-prior" to the training set based on the test-set's g-r and r-i color
     ### Example:     python cmnn_run.py --cmnn_ppclr False
-    parser.add_argument('--cmnn_ppclr', action='store', dest='user_cmnn_ppclr', type=bool, \
+    parser.add_argument('--cmnn_ppclr', action='store', dest='user_cmnn_ppclr', type=str2bool, \
         help='CMNN: apply color pre-cut to training set', default=True, choices=[True,False])
 
     ### Argument:    stats_COR, type float 1, default 1.5
@@ -166,6 +177,9 @@ if __name__ == '__main__':
             print(' To overwrite, use --clobber_runid True')
             print('Exit (bad runid).')
             exit()
+
+    if os.path.isdir('output') == False :
+        os.system('mkdir output')
 
     os.system('mkdir output/run_'+args.user_runid)
     os.system('touch output/run_'+args.user_runid+'/timestamps.dat')   
@@ -253,6 +267,7 @@ if __name__ == '__main__':
     if args.user_verbose:
         print(' ')
         print('User inputs (can also be found in output/run_'+args.user_runid+'):')
+        print( '%-11s %r' % ('clobber',args.user_clobber) )
         print( '%-11s %s' % ('runid',args.user_runid) )
         print( '%-11s %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f' % \
             ('test_m5',args.user_test_m5[0],args.user_test_m5[1],args.user_test_m5[2],\
@@ -279,6 +294,7 @@ if __name__ == '__main__':
 
     ### Record user inputs to file.
     fout = open('output/run_'+args.user_runid+'/inputs.txt','w')
+    fout.write( '%-11s %r \n' % ('clobber',args.user_clobber) )
     fout.write( '%-11s %s \n' % ('runid',args.user_runid) )
     fout.write( '%-11s %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f \n' % \
         ('test_m5',args.user_test_m5[0],args.user_test_m5[1],args.user_test_m5[2],\

@@ -407,6 +407,9 @@ def make_tzpz_plot( verbose, runid, \
         print(' ')
         print('Starting cmnn_analysis.make_tzpz_plot(), ',datetime.datetime.now())
 
+    if os.path.isdir('output/run_'+runid+'/analysis') == False :
+        os.system('mkdir output/run_'+runid+'/analysis')
+
     ### Read in the data
     fnm = 'output/run_'+runid+'/zphot.cat'
     ztrue = np.loadtxt( fnm, dtype='float', usecols={1})
@@ -461,7 +464,7 @@ def make_tzpz_plot( verbose, runid, \
     if outliers_label:
         plt.legend( loc='upper center', numpoints=1, markerscale=3, prop={'size':16}, labelspacing=0.5)
 
-    ofnm = 'output/run_'+runid+'/tzpz'
+    ofnm = 'output/run_'+runid+'/analysis/tzpz'
     plt.savefig(ofnm,bbox_inches='tight')
     if verbose: print('Wrote to: ',ofnm)
 
