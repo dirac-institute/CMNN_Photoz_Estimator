@@ -60,16 +60,16 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
 
     ### Bootstrap resample with replacement to estimate errors for the statistical measures.
     ###   Nmc : number of times to repeat measurement
-    Nmc  = 1000
+    Nmc  = int(1000)
 
     ### Calculate the IQRs for all test galaxies with a zphot in the range 0.3 < zphot < 3.0.
     ### Will need this to identify outliers using the SRD's definition of an outlier.
-    tx         = np.where( ( in_zphot >= 0.3) & ( in_zphot <= 3.0) )[0]
+    tx         = np.where( ( in_zphot >= float(0.300) ) & ( in_zphot <= float(3.000) ) )[0]
     fr_zspec   = in_zspec[tx]
     fr_zphot   = in_zphot[tx]
-    fr_dzo1pzp = ( fr_zspec - fr_zphot ) / ( 1.0 + fr_zphot )
+    fr_dzo1pzp = ( fr_zspec - fr_zphot ) / ( float(1.0) + fr_zphot )
     q75, q25   = np.percentile( fr_dzo1pzp, [75 ,25] )
-    fr_IQRs    = ( q75 - q25 ) / 1.349
+    fr_IQRs    = ( q75 - q25 ) / float(1.349)
     del tx, fr_zphot, fr_zspec, fr_dzo1pzp, q75, q25
 
     ### Identify all test galaxies in the requested bin.
@@ -91,11 +91,11 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
     CORmeanz = np.mean( CORzphot )
 
     ### Define bin_dzo1pzp for use in all stats
-    dzo1pzp    = ( zspec - zphot ) / ( 1.0 + zphot )
-    CORdzo1pzp = ( CORzspec - CORzphot ) / ( 1.0 + CORzphot )
+    dzo1pzp    = ( zspec - zphot ) / ( float(1.0) + zphot )
+    CORdzo1pzp = ( CORzspec - CORzphot ) / ( float(1.0) + CORzphot )
 
     ### Fraction of outliers as defined by the SRD
-    tx   = np.where( ( np.fabs( dzo1pzp ) > 0.06 ) & ( np.fabs( dzo1pzp ) > (3.0*fr_IQRs) ) )[0]
+    tx   = np.where( ( np.fabs( dzo1pzp ) > float(0.0600) ) & ( np.fabs( dzo1pzp ) > ( float(3.0)*fr_IQRs) ) )[0]
     fout = float( len( tx ) ) / float( len( dzo1pzp ) )
     del tx
 
@@ -110,7 +110,7 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
     ### Intraquartile Range
     q75, q25 = np.percentile( dzo1pzp, [75 ,25] )
     IQR      = ( q75 - q25 )
-    IQRstdd  = ( q75 - q25 ) / 1.349
+    IQRstdd  = ( q75 - q25 ) / float(1.349)
     tx       = np.where( ( dzo1pzp > q25 ) & ( dzo1pzp < q75 ) )[0]
     IQRbias  = np.mean( dzo1pzp[tx] )
     del q75, q25, tx
@@ -118,7 +118,7 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
     ### COR Intraquartile Range
     q75, q25   = np.percentile( CORdzo1pzp, [75 ,25] )
     CORIQR     = ( q75 - q25 )
-    CORIQRstdd = ( q75 - q25 ) / 1.349
+    CORIQRstdd = ( q75 - q25 ) / float(1.349)
     tx         = np.where( ( CORdzo1pzp > q25 ) & ( CORdzo1pzp < q75 ) )[0]
     CORIQRbias = np.mean( CORdzo1pzp[tx] )
     del q75, q25, tx
@@ -140,7 +140,7 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
         vals_b[i]    = np.mean( dzo1pzp[tx] )
         q75, q25     = np.percentile( dzo1pzp[tx], [75 ,25] )
         vals_IQR[i]  = ( q75 - q25 )
-        vals_IQRs[i] = ( q75 - q25 ) / 1.349
+        vals_IQRs[i] = ( q75 - q25 ) / float(1.349)
         temp         = dzo1pzp[tx]
         ttx          = np.where( ( temp > q25 ) & ( temp < q75 ) )[0]
         vals_IQRb[i] = np.mean( temp[ttx] )
@@ -151,7 +151,7 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
         vals_CORb[i]    = np.mean( CORdzo1pzp[tx] )
         q75, q25        = np.percentile( CORdzo1pzp[tx], [75 ,25])
         vals_CORIQR[i]  = ( q75 - q25 )
-        vals_CORIQRs[i] = ( q75 - q25 ) / 1.349
+        vals_CORIQRs[i] = ( q75 - q25 ) / float(1.349)
         CORtemp         = CORdzo1pzp[tx]
         ttx             = np.where( ( CORtemp > q25 ) & ( CORtemp < q75 ) )[0]
         vals_CORIQRb[i] = np.mean( CORtemp[ttx] )
@@ -219,7 +219,7 @@ def make_stats_file(  verbose, runid, stats_COR, input_zbins=None ):
         'estdd ebias eIQR eIQRstdd eIQRbias eCORstdd eCORbias eCORIQR eCORIQRstdd eCORIQRbias \n')
     for z in range(len(zbins)-1):
         stats = get_stats( ztrue, zphot, zbins[z,0], zbins[z,1], stats_COR )
-        fout.write('%4.3f %4.3f ' % (zbins[z,0], zbins[z,1]) )
+        fout.write('%6.4f %6.4f ' % (zbins[z,0], zbins[z,1]) )
         fout.write('%6.4f %6.4f %6.4f ' % (stats[0], stats[1], stats[2]) )
         fout.write('%6.4f %6.4f %6.4f %6.4f %6.4f ' % (stats[3], stats[4], stats[5], stats[6], stats[7]) )
         fout.write('%6.4f %6.4f %6.4f %6.4f %6.4f ' % (stats[8], stats[9], stats[10], stats[11], stats[12]) )
@@ -439,14 +439,14 @@ def make_tzpz_plot( verbose, runid, \
 
     ### Overplot the outliers as points
     if outliers_show:
-        tmp_x      = np.where( (zphot > 0.3) & (zphot < 3.0) )[0]
+        tmp_x      = np.where( (zphot > float(0.300)) & (zphot < float(3.0)) )[0]
         tmp_ztrue  = ztrue[tmp_x]
         tmp_zphot  = zphot[tmp_x]
         tmp_dz     = ( tmp_ztrue - tmp_zphot ) / ( 1.0 + tmp_zphot )
         q75, q25   = np.percentile( tmp_dz, [75 ,25])
-        sigma      = ( q75 - q25 ) / 1.349
-        threesigma = 3.0 * sigma
-        ox = np.where( ( np.fabs( tmp_dz ) > 0.06 ) & ( np.fabs( tmp_dz ) > threesigma ) )[0]
+        sigma      = ( q75 - q25 ) / float(1.349)
+        threesigma = float(3.0) * sigma
+        ox = np.where( ( np.fabs( tmp_dz ) > float(0.0600) ) & ( np.fabs( tmp_dz ) > threesigma ) )[0]
         if outliers_label:
             plt.plot( tmp_zphot[ox], tmp_ztrue[ox], 'o', ms=2, alpha=0.4, color=outliers_color, \
                 markeredgewidth=0, label='outlier')

@@ -84,7 +84,7 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
 
     ### Do not allow tm < 18, the approximate saturation point
     for f in range(6):
-        tx = np.where( all_tm[:,f] < 18.0 )[0]
+        tx = np.where( all_tm[:,f] < 18.0000 )[0]
         all_test_me[tx]  = float('NaN')
         all_test_m[tx]   = float('NaN')
         all_train_me[tx] = float('NaN')
@@ -95,11 +95,11 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
     ###  For tm = m5, then me = 0.2, and allowing tm-m5>0.5 allows "upscattering"
     ###  of faint galaxies to brighter observed apparent magnitude, getting them "detected"
     for f in range(6):
-        tx = np.where( all_tm[:,f] > np_test_m5[f]+0.2 )[0]
+        tx = np.where( all_tm[:,f] > np_test_m5[f]+0.2000 )[0]
         all_test_me[tx] = float('NaN')
         all_test_m[tx] = float('NaN')
         del tx
-        tx = np.where( all_tm[:,f] > np_train_m5[f]+0.2 )[0]
+        tx = np.where( all_tm[:,f] > np_train_m5[f]+0.2000 )[0]
         all_train_me[tx] = float('NaN')
         all_train_m[tx] = float('NaN')
         del tx
@@ -154,11 +154,11 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
         te_rx = np.random.choice( te_x, size=test_N, replace=False )
         test_fout = open('output/run_'+runid+'/test.cat','w')
         for i in te_rx:
-            test_fout.write(' %10i %8.6f ' % (all_id[i],all_tz[i]) )
+            test_fout.write(' %10i %10.8f ' % (all_id[i],all_tz[i]) )
             for f in range(6):
-                test_fout.write('%6.3f %6.3f ' % (all_test_m[i,f],all_test_me[i,f]) )
+                test_fout.write('%9.6f %9.6f ' % (all_test_m[i,f],all_test_me[i,f]) )
             for c in range(5):
-                test_fout.write('%6.3f %6.3f ' % (all_test_c[i,c],all_test_ce[i,c]) )
+                test_fout.write('%9.6f %9.6f ' % (all_test_c[i,c],all_test_ce[i,c]) )
             test_fout.write('\n')
         test_fout.close()
         del te_rx,test_fout
@@ -167,11 +167,11 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
         tr_rx = np.random.choice( tr_x, size=train_N, replace=False )
         train_fout = open('output/run_'+runid+'/train.cat','w')
         for i in tr_rx:
-            train_fout.write(' %10i %8.6f ' % (all_id[i],all_tz[i]) )
+            train_fout.write(' %10i %10.8f ' % (all_id[i],all_tz[i]) )
             for f in range(6):
-                train_fout.write('%6.3f %6.3f ' % (all_train_m[i,f],all_train_me[i,f]) )
+                train_fout.write('%9.6f %9.6f ' % (all_train_m[i,f],all_train_me[i,f]) )
             for c in range(5):
-                train_fout.write('%6.3f %6.3f ' % (all_train_c[i,c],all_train_ce[i,c]) )
+                train_fout.write('%9.6f %9.6f ' % (all_train_c[i,c],all_train_ce[i,c]) )
             train_fout.write('\n')
         train_fout.close()
         del tr_rx,train_fout

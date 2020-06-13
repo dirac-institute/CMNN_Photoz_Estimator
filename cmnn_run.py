@@ -83,25 +83,25 @@ if __name__ == '__main__':
     ### Description: the 5-sigma magnitude limits (depths) to apply to the test-set galaxies
     ### Example:     python cmnn_run.py --test_m5 23.9 25.0 24.7 24.0 23.3 22.1
     parser.add_argument('--test_m5', nargs='+', action='store', dest='user_test_m5', type=float,\
-        help='test-set 5sig mag depths u g r i z y', default=[26.1, 27.4, 27.5, 26.8, 26.1, 24.9])
+        help='test-set 5sig mag depths u g r i z y', default=[26.100, 27.400, 27.500, 26.800, 26.100, 24.900])
     
     ### Argument:    train_m5, type float 6, default 26.1 27.4 27.5 26.8 26.1 24.9 (baseline 10-year depth)
     ### Description: the 5-sigma magnitude limits (depths) to apply to the train-set galaxies
     ### Example:     python cmnn_run.py --train_m5 27.0 28.0 28.0 27.0 27.0 25.0
     parser.add_argument('--train_m5', nargs='+', action='store', dest='user_train_m5', type=float,\
-        help='train-set 5sig mag depths u g r i z y', default=[26.1, 27.4, 27.5, 26.8, 26.1, 24.9])
+        help='train-set 5sig mag depths u g r i z y', default=[26.100, 27.400, 27.500, 26.800, 26.100, 24.900])
 
     ### Argument:    test_mcut, type float 6, default 26.1 27.4 27.5 25.0 26.1 24.9 (baseline 10-year depth, i<25)
     ### Description: a magnitude cut-off to apply to the test-set galaxies
     ### Example:     python cmnn_run.py --test_mcut 23.9 25.0 24.7 24.0 23.3 22.1
     parser.add_argument('--test_mcut', nargs='+', action='store', dest='user_test_mcut', type=float,\
-        help='test-set mag det cuts u g r i z y', default=[26.1, 27.4, 27.5, 25.0, 26.1, 24.9])
+        help='test-set mag det cuts u g r i z y', default=[26.100, 27.400, 27.500, 25.000, 26.100, 24.900])
     
     ### Argument:    train_mcut, type float 6, default 26.1 27.4 27.5 25.0 26.1 24.9 (baseline 10-year depth, i<25)
     ### Description: a magnitude cut-off to apply to the train-set galaxies
     ### Example:     python cmnn_run.py --train_mcut 27.0 28.0 28.0 25.0 27.0 25.0
     parser.add_argument('--train_mcut', nargs='+', action='store', dest='user_train_mcut', type=float,\
-        help='train-set mag det cuts u g r i z y', default=[26.1, 27.4, 27.5, 25.0, 26.1, 24.9])
+        help='train-set mag det cuts u g r i z y', default=[26.100, 27.400, 27.500, 25.000, 26.100, 24.900])
 
     ### Argument:    force_idet, type bool 1, default True
     ### Description: force detection in i-band for all test and train galaxies
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     ### Description: the percent point function that defines the Mahalanobis distance threshold of the CMNN
     ### Example:     python cmnn_run.py --cmnn_ppf 0.95
     parser.add_argument('--cmnn_ppf', action='store', dest='user_cmnn_ppf', type=float, \
-        help='CMNN: percent point function value (0.68 or 0.95)', default=0.68, choices=[0.68,0.95])
+        help='CMNN: percent point function value (0.68 or 0.95)', default=0.680, choices=[0.680,0.950])
 
     ### Argument:    cmnn_rsel, type int 1, default 2, accepted values 0, 1, or 2
     ### Description: mode of random selection of a training-set galaxy from the CMNN subset:
@@ -207,27 +207,27 @@ if __name__ == '__main__':
     ###   mcut_min : minimum cut set to near saturation for a single standard visit (30 sec)
     ###   mcut_max : =m5_max, except i<25 mag to match SRD "gold sample" (and match provided catalog)
     filters  = ['u','g','r','i','z','y']
-    m5_min   = [23.9, 25.0, 24.7, 24.0, 23.3, 22.1]
-    m5_max   = [29.0, 29.0, 29.0, 29.0, 29.0, 29.0]
-    mcut_min = [17.0, 17.0, 17.0, 17.0, 17.0, 17.0]
-    mcut_max = [29.0, 29.0, 29.0, 25.0, 29.0, 29.0]
+    m5_min   = [23.900, 25.000, 24.700, 24.000, 23.300, 22.100]
+    m5_max   = [29.000, 29.000, 29.000, 29.000, 29.000, 29.000]
+    mcut_min = [17.000, 17.000, 17.000, 17.000, 17.000, 17.000]
+    mcut_max = [29.000, 29.000, 29.000, 25.000, 29.000, 29.000]
     mfail = False
     message = ''
     for f in range(6):
         if (args.user_test_m5[f] < m5_min[f]) | (args.user_test_m5[f] > m5_max[f]):
-            message += '  test_m5: filter, value, min, max = %s %4.2f %4.2f %4.2f \n' % \
+            message += '  test_m5: filter, value, min, max = %s %6.3f %6.3f %6.3f \n' % \
             (filters[f],args.user_test_m5[f],m5_min[f],m5_max[f])
             mfail = True
         if (args.user_train_m5[f] < m5_min[f]) | (args.user_train_m5[f] > m5_max[f]):
-            message += '  train_m5: filter, value, min, max = %s %4.2f %4.2f %4.2f \n' % \
+            message += '  train_m5: filter, value, min, max = %s %6.3f %6.3f %6.3f \n' % \
             (filters[f],args.user_train_m5[f],m5_min[f],m5_max[f])
             mfail = True
         if (args.user_test_mcut[f] < mcut_min[f]) | (args.user_test_mcut[f] > mcut_max[f]):
-            message += '  test_mcut: filter, value, min, max = %s %4.2f %4.2f %4.2f \n' % \
+            message += '  test_mcut: filter, value, min, max = %s %6.3f %6.3f %6.3f \n' % \
             (filters[f],args.user_test_mcut[f],mcut_min[f],mcut_max[f])
             mfail = True
         if (args.user_train_mcut[f] < mcut_min[f]) | (args.user_train_mcut[f] > mcut_max[f]):
-            message += '  train_mcut: filter, value, min, max = %s %4.2f %4.2f %4.2f \n' % \
+            message += '  train_mcut: filter, value, min, max = %s %6.3f %6.3f %6.3f \n' % \
             (filters[f],args.user_train_mcut[f],mcut_min[f],mcut_max[f])
             mfail = True
     if mfail == True:
@@ -270,16 +270,16 @@ if __name__ == '__main__':
         print('User inputs (can also be found in output/run_'+args.user_runid+'):')
         print( '%-11s %r' % ('clobber',args.user_clobber) )
         print( '%-11s %s' % ('runid',args.user_runid) )
-        print( '%-11s %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f' % \
+        print( '%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f' % \
             ('test_m5',args.user_test_m5[0],args.user_test_m5[1],args.user_test_m5[2],\
                 args.user_test_m5[3],args.user_test_m5[4],args.user_test_m5[5]) )
-        print( '%-11s %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f' % \
+        print( '%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f' % \
             ('train_m5',args.user_train_m5[0],args.user_train_m5[1],args.user_train_m5[2],\
                 args.user_train_m5[3],args.user_train_m5[4],args.user_train_m5[5]) )
-        print( '%-11s %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f' % \
+        print( '%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f' % \
             ('test_mcut',args.user_test_mcut[0],args.user_test_mcut[1],args.user_test_mcut[2],\
                 args.user_test_mcut[3],args.user_test_mcut[4],args.user_test_mcut[5]) )
-        print( '%-11s %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f' % \
+        print( '%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f' % \
             ('train_mcut',args.user_train_mcut[0],args.user_train_mcut[1],args.user_train_mcut[2],\
                 args.user_train_mcut[3],args.user_train_mcut[4],args.user_train_mcut[5]) )
         print( '%-11s %r' % ('force_idet',args.user_force_idet) )
@@ -287,7 +287,7 @@ if __name__ == '__main__':
         print( '%-11s %i' % ('train_N',args.user_train_N) )
         print( '%-11s %i' % ('cmnn_minNc',args.user_cmnn_minNc) )
         print( '%-11s %i' % ('cmnn_minNN',args.user_cmnn_minNN) )
-        print( '%-11s %4.2f' % ('cmnn_ppf',args.user_cmnn_ppf) )
+        print( '%-11s %5.3f' % ('cmnn_ppf',args.user_cmnn_ppf) )
         print( '%-11s %i' % ('cmnn_rsel',args.user_cmnn_rsel) )
         print( '%-11s %r' % ('cmnn_ppmag',args.user_cmnn_ppmag) )
         print( '%-11s %r' % ('cmnn_ppclr',args.user_cmnn_ppclr) )
@@ -297,16 +297,16 @@ if __name__ == '__main__':
     fout = open('output/run_'+args.user_runid+'/inputs.txt','w')
     fout.write( '%-11s %r \n' % ('clobber',args.user_clobber) )
     fout.write( '%-11s %s \n' % ('runid',args.user_runid) )
-    fout.write( '%-11s %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f \n' % \
+    fout.write( '%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
         ('test_m5',args.user_test_m5[0],args.user_test_m5[1],args.user_test_m5[2],\
             args.user_test_m5[3],args.user_test_m5[4],args.user_test_m5[5]) )
-    fout.write( '%-11s %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f \n' % \
+    fout.write( '%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
         ('train_m5',args.user_train_m5[0],args.user_train_m5[1],args.user_train_m5[2],\
             args.user_train_m5[3],args.user_train_m5[4],args.user_train_m5[5]) )
-    fout.write( '%-11s %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f \n' % \
+    fout.write( '%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
         ('test_mcut',args.user_test_mcut[0],args.user_test_mcut[1],args.user_test_mcut[2],\
             args.user_test_mcut[3],args.user_test_mcut[4],args.user_test_mcut[5]) )
-    fout.write( '%-11s %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f \n' % \
+    fout.write( '%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
         ('train_mcut',args.user_train_mcut[0],args.user_train_mcut[1],args.user_train_mcut[2],\
             args.user_train_mcut[3],args.user_train_mcut[4],args.user_train_mcut[5]) )
     fout.write( '%-11s %r \n' % ('force_idet',args.user_force_idet) )
@@ -314,7 +314,7 @@ if __name__ == '__main__':
     fout.write( '%-11s %i \n' % ('train_N',args.user_train_N) )
     fout.write( '%-11s %i \n' % ('cmnn_minNc',args.user_cmnn_minNc) )
     fout.write( '%-11s %i \n' % ('cmnn_minNN',args.user_cmnn_minNN) )
-    fout.write( '%-11s %4.2f \n' % ('cmnn_ppf',args.user_cmnn_ppf) )
+    fout.write( '%-11s %5.3f \n' % ('cmnn_ppf',args.user_cmnn_ppf) )
     fout.write( '%-11s %i \n' % ('cmnn_rsel',args.user_cmnn_rsel) )
     fout.write( '%-11s %r \n' % ('cmnn_ppmag',args.user_cmnn_ppmag) )
     fout.write( '%-11s %r \n' % ('cmnn_ppclr',args.user_cmnn_ppclr) )

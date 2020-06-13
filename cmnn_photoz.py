@@ -29,7 +29,7 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
     ###   Ncm         : the number of training-set galaxies in the color-matched subset
 
     ### Calculate the Mahalanobis Distance for each training set galaxy
-    MahalanobisDistance = np.nansum( ( test_c - train_c )**2 / test_ce**2, axis=1 )
+    MahalanobisDistance = np.nansum( ( test_c - train_c )**2 / test_ce**2, axis=1, dtype='float' )
 
     ### Calculate the Degrees of Freedom for each training set galaxy
     ###  Choice of numerator/denominator is arbitrary, but keep denom != 0
@@ -44,8 +44,8 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
     ### Identify the indicies of the CMNN subset of training-set galaxies
     index = np.where( \
         ( DegreesOfFreedom >= minimum_Ncolors ) & \
-        ( thresholds > 0.00 ) & \
-        ( MahalanobisDistance > 0.00 ) & \
+        ( thresholds > 0.000000 ) & \
+        ( MahalanobisDistance > 0.000000 ) & \
         ( MahalanobisDistance <= thresholds ) )[0]
 
     ### Determine the photometric redshift for this test galaxy
@@ -167,7 +167,7 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
     for i in range(6):
         cmnn_thresh_table[i] = chi2.ppf(cmnn_ppf,i)
     ### Don't let there be a 'NaN' in the threshold table, just set to = 0.00
-    cmnn_thresh_table[0] = float(0.00)
+    cmnn_thresh_table[0] = float(0.0000)
 
     ### Prepare for a magnitude pre-cut on the training set
     if (cmnn_ppmag == True) & (force_idet == False):
@@ -190,26 +190,26 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
         ### if cmnn_ppmag or cmnn_ppclr is true, we only use part of the training set
         if cmnn_ppmag or cmnn_ppclr:
             ### set default values that are equivalent to 'no cut'
-            ilow  = 15.0
-            ihi   = 30.0
-            grlow = -10.0
-            grhi  = +10.0
-            rilow = -10.0
-            rihi  = +10.0
+            ilow  = float(15.0)
+            ihi   = float(30.0)
+            grlow = float(-10.0)
+            grhi  = float(+10.0)
+            rilow = float(-10.0)
+            rihi  = float(+10.0)
             ### define the lower/upper i-band magnitudes for the training set
             if cmnn_ppmag:
                 mx = np.argmin( np.abs( all_test_m[i,3] - ppmag_sorted_train_imags ) )
                 ### percentile of the test-set galaxy's i-band magnitude
                 pc = ppmag_fractions[mx]
                 ### find i-band mags bounding +/-5% of training galaxies
-                pclow = pc - 0.05
-                pchi  = pc + 0.05
-                if pclow < 0.00:
-                    pclow = 0.00
-                    pchi  = 0.10
-                if pchi > 1.00:
-                    pclow = 0.90
-                    pchi  = 1.00
+                pclow = pc - float(0.05)
+                pchi  = pc + float(0.05)
+                if pclow < float(0.00):
+                    pclow = float(0.00)
+                    pchi  = float(0.10)
+                if pchi > float(1.00):
+                    pclow = float(0.90)
+                    pchi  = float(1.00)
                 pxlow = np.argmin( np.abs( pclow - ppmag_fractions ) )
                 pxhi  = np.argmin( np.abs( pchi - ppmag_fractions ) )
                 ilow = ppmag_sorted_train_imags[pxlow]
@@ -218,10 +218,10 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
             ### define lower/upper g-r and r-i colors for the training set
             if cmnn_ppclr:
                 if (np.isfinite(all_test_c[i,1])) & (np.isfinite(all_test_c[i,2])):
-                    grlow = all_test_c[i,1]-0.3
-                    grhi  = all_test_c[i,1]+0.3
-                    rilow = all_test_c[i,2]-0.3
-                    rihi  = all_test_c[i,2]+0.3
+                    grlow = all_test_c[i,1] - float(0.3)
+                    grhi  = all_test_c[i,1] + float(0.3)
+                    rilow = all_test_c[i,2] - float(0.3)
+                    rihi  = all_test_c[i,2] + float(0.3)
             ### apply the boundaries in i mag and g-r, r-i color to the training set
             trx = np.where( (all_train_id[:] != all_test_id[i]) &\
                 (all_train_m[:,3] >= ilow) & (all_train_m[:,3] <= ihi) &\
@@ -238,10 +238,7 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
             results = return_photoz( all_test_c[i], all_test_ce[i], \
                 all_train_c[trx], all_train_tz[trx], \
                 cmnn_ppf, cmnn_thresh_table, cmnn_rsel, cmnn_minNc, cmnn_minNN)       
-        fout.write( '%10i %6.4f %6.4f %6.4f %10i \n' % \
+        fout.write( '%10i %10.8f %10.8f %10.8f %10i \n' % \
             (all_test_id[i], all_test_tz[i], results[0], results[1], results[2]) )
     fout.close()
     if verbose: print('Wrote to: output/run_'+runid+'/zphot.cat')
-
-
-
