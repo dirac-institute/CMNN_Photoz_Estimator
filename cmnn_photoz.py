@@ -37,25 +37,15 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
     ### Determine the appropriate threshold that should apply to each training set galaxy
     ### We use a look-up table; the slow way is: thresholds = chi2.ppf( ppf_value, DegreesOfFreedom )
     thresholds = np.zeros( len(train_c), dtype='float' )
-
-    ### Only calculate the thresholds for training galaxies that could conceivably be a CMNN
-    tx = np.where( \
-        ( np.isfinite(MahalanobisDistance) ) & \
-        ( np.isfinite(DegreesOfFreedom) ) & \
-        ( DegreesOfFreedom >= minimum_Ncolors ) & \
-        ( MahalanobisDistance <= thresh_table[-1] ) )[0]
-    if len(tx) >= 1:
-        thresholds[tx] = thresh_table[ DegreesOfFreedom[tx] ]
-    del tx
+    for i in range(len(train_c)):
+        thresholds[i] = thresh_table[ DegreesOfFreedom[i] ]
 
     ### Identify the indicies of the CMNN subset of training-set galaxies
     index = np.where( \
         ( test_id != train_id ) & \
-        ( np.isfinite(MahalanobisDistance) ) & \
-        ( np.isfinite(DegreesOfFreedom) ) & \
         ( DegreesOfFreedom >= minimum_Ncolors ) & \
-        ( thresholds > 0.0010 ) & \
-        ( MahalanobisDistance > 0.00010 ) & \
+        ( thresholds > 0.00 ) & \
+        ( MahalanobisDistance > 0.00 ) & \
         ( MahalanobisDistance <= thresholds ) )[0]
 
     ### Determine the photometric redshift for this test galaxy
@@ -98,12 +88,9 @@ def return_photoz( test_c, test_ce, test_id, train_c, train_z, train_id, \
         ### find out how many there are we could potentially use
         index2 = np.where( \
             ( test_id != train_id ) & \
-            ( np.isfinite(MahalanobisDistance) ) & \
-            ( np.isfinite(DegreesOfFreedom) ) & \
             ( DegreesOfFreedom >= minimum_Ncolors ) & \
-            # ( thresholds > 0.0010 ) & \
-            ( MahalanobisDistance > 0.00010 ) )[0] # & \
-            # ( MahalanobisDistance < thresholds ) )[0]
+            ( thresholds > 0.00 ) & \
+            ( MahalanobisDistance > 0.00 ) )[0]
 
         ### if there's more than the minimum number, use them
         if len(index2) >= minimum_Nneighbors:
@@ -185,7 +172,8 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
 
     ### Prepare for a magnitude pre-cut on the training set
     if (cmnn_ppmag == True) & (force_idet == False):
-        print('Error. Must set force_idet = True in order to set the cmnn_ppmag = True.')
+        print('Error. Must set force_idet = True in cmnn_run, to be applied during catalog generation,')
+        print('in order to use the setting of cmnn_ppmag = True.')
         print('  cmnn_ppmag : %r \n' % cmnn_ppmag)
         print('  force_idet : %r \n' % force_idet)
         print('Exit (cmnn_ppmag and force_idet user inputs are incompatible).')

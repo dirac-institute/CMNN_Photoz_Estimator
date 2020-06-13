@@ -7,6 +7,7 @@ import cmnn_analysis
 # import cmnn_tools
 
 
+#https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse/36031646
 def str2bool(v):
     if isinstance(v, bool):
        return v
