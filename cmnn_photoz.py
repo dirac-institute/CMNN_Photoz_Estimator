@@ -27,7 +27,9 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
     ###   Photoz      : the photometric redshift for the test galaxy
     ###   PhotozError : the uncertainty in the photo-z for the test galaxy
     ###   Ncm         : the number of training-set galaxies in the color-matched subset
+    ###   size_train  : the size of the training set passed to return_photoz()
 
+    ### Record the size of the training subset passed for this test galaxy
     size_train = len(train_z)
 
     ### Calculate the Mahalanobis Distance for each training set galaxy
@@ -35,8 +37,9 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
 
     ### Calculate the Degrees of Freedom for each training set galaxy
     ###  Choice of numerator/denominator is arbitrary, but keep denom != 0
+    ###  Use floats even though 
     DegreesOfFreedom    = np.nansum( ( test_c**2 + train_c**2 + 1.0 ) / ( test_c**2 + train_c**2 + 1.0 ), \
-        axis=1, dtype='int' )
+        axis=1, dtype='float' )
 
     ### The Slow Way **IT'S SO SLOW I COULDN'T FULLY VERIFY IT**
     # MahalanobisDistance = np.zeros( len(train_c), dtype='float' )
@@ -173,6 +176,19 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
     all_train_c  = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols={14,16,18,20,22} )
     # all_train_ce = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols={15,17,19,21,23} )
 
+    if verbose:
+        print('Test set array lengths.')
+        print('all_test_id  = ',len(all_test_id))
+        print('all_test_tz  = ',len(all_test_tz))
+        print('all_test_m   = ',len(all_test_m))
+        print('all_test_c   = ',len(all_test_c))
+        print('all_test_ce  = ',len(all_test_ce))
+        print('Training set array lengths.')
+        print('all_train_id = ',len(all_train_id))
+        print('all_train_tz = ',len(all_train_tz))
+        print('all_train_m  = ',len(all_train_m))
+        print('all_train_c  = ',len(all_train_c))
+
     ### Prepare a table of thresholds based on the desired percent point function
     ###   chi2.ppf is slow, so we only want to do this once
     cmnn_thresh_table = np.zeros( 6, dtype='float' )
@@ -180,6 +196,11 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
         cmnn_thresh_table[i] = chi2.ppf(cmnn_ppf,i)
     ### Don't let there be a 'NaN' in the threshold table, just set to = 0.00
     cmnn_thresh_table[0] = float(0.0000)
+    if verbose:
+        print('cmnn_thresh_table:')
+        for i in range(6):
+            print('i, threshold = ',i,cmnn_thresh_table[i])
+    del i
 
     ### Prepare for a magnitude pre-cut on the training set
     if (cmnn_ppmag == True) & (force_idet == False):
@@ -194,15 +215,15 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
         ppmag_fractions = np.asarray( range(len(ppmag_sorted_train_imags)), dtype='float') /\
         float(len(ppmag_sorted_train_imags))
 
+    if verbose: print('Starting to create list of photo-z: output/run_'+runid+'/zphot.cat')
 
     ### Calculate photometric redshifts for all test-set galaxies and write to zphot file
-    if verbose: print('Starting to create list of photo-z: output/run_'+runid+'/zphot.cat')
     fout = open('output/run_'+runid+'/zphot.cat','w')
     fout.write('# cmnn_minNc=%3i cmnn_minNN=%3i cmnn_ppf=%4.2f cmnn_rsel=%i cmnn_ppmag=%r cmnn_ppclr=%r \n' % \
         (cmnn_minNc,cmnn_minNN,cmnn_ppf,cmnn_rsel,cmnn_ppmag,cmnn_ppclr))
     for i in range(len(all_test_id)):
         ### if cmnn_ppmag or cmnn_ppclr is true, we only use part of the training set
-        if cmnn_ppmag or cmnn_ppclr:
+        if (cmnn_ppmag == True) | (cmnn_ppclr == True):
             ### set default values that are equivalent to 'no cut'
             ilow  = float(15.0)
             ihi   = float(30.0)
@@ -211,7 +232,7 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
             rilow = float(-10.0)
             rihi  = float(+10.0)
             ### define the lower/upper i-band magnitudes for the training set
-            if cmnn_ppmag:
+            if (cmnn_ppmag == True):
                 mx = np.argmin( np.abs( all_test_m[i,3] - ppmag_sorted_train_imags ) )
                 ### percentile of the test-set galaxy's i-band magnitude
                 pc = ppmag_fractions[mx]
@@ -230,8 +251,8 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
                 ihi  = ppmag_sorted_train_imags[pxhi]
                 del mx,pc,pclow,pchi,pxlow,pxhi
             ### define lower/upper g-r and r-i colors for the training set
-            if cmnn_ppclr:
-                if (np.isfinite(all_test_c[i,1])) & (np.isfinite(all_test_c[i,2])):
+            if (cmnn_ppclr == True):
+                if ( np.isnan(all_test_c[i,1]) == False ) & ( np.isnan(all_test_c[i,2]) == False ):
                     grlow = all_test_c[i,1] - float(0.3)
                     grhi  = all_test_c[i,1] + float(0.3)
                     rilow = all_test_c[i,2] - float(0.3)

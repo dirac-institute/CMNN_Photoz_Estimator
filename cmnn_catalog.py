@@ -85,10 +85,10 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
     ### Do not allow tm < 18, the approximate saturation point
     for f in range(6):
         tx = np.where( all_tm[:,f] < 18.0000 )[0]
-        all_test_me[tx]  = float('NaN')
-        all_test_m[tx]   = float('NaN')
-        all_train_me[tx] = float('NaN')
-        all_train_m[tx]  = float('NaN')
+        all_test_me[tx]  = np.nan
+        all_test_m[tx]   = np.nan
+        all_train_me[tx] = np.nan
+        all_train_m[tx]  = np.nan
         del tx
 
     ### Do not allow (tm-m5) > 0.2.
@@ -96,33 +96,33 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
     ###  of faint galaxies to brighter observed apparent magnitude, getting them "detected"
     for f in range(6):
         tx = np.where( all_tm[:,f] > np_test_m5[f]+0.2000 )[0]
-        all_test_me[tx] = float('NaN')
-        all_test_m[tx] = float('NaN')
+        all_test_me[tx] = np.nan
+        all_test_m[tx] = np.nan
         del tx
         tx = np.where( all_tm[:,f] > np_train_m5[f]+0.2000 )[0]
-        all_train_me[tx] = float('NaN')
-        all_train_m[tx] = float('NaN')
+        all_train_me[tx] = np.nan
+        all_train_m[tx] = np.nan
         del tx
 
-    ### Apply the magnitude cuts, set values to float('NaN') if not detected
+    ### Apply the magnitude cuts, set values to np.nan if not detected
     ### If the user desired to force a detection in i-band, then for all galaxies
-    ###   undetected in i-band, set all filters' apparent mags to float('NaN')
+    ###   undetected in i-band, set all filters' apparent mags to np.nan
     if verbose: print('Applying the magnitude cuts.')
     for f in range(6):
         te_x = np.where( all_test_m[:,f] > np_test_mcut[f] )[0]
         if len(te_x) > 0:
-            all_test_m[te_x,f]  = float('NaN')
-            all_test_me[te_x,f] = float('NaN')
+            all_test_m[te_x,f]  = np.nan
+            all_test_me[te_x,f] = np.nan
         if (force_idet == True) & (f == 3):
-            all_test_m[te_x,:]  = float('NaN')
-            all_test_me[te_x,:] = float('NaN')
+            all_test_m[te_x,:]  = np.nan
+            all_test_me[te_x,:] = np.nan
         tr_x = np.where( all_train_m[:,f] > np_train_mcut[f] )[0]
         if len(tr_x) > 0:
-            all_train_m[tr_x,f]  = float('NaN')
-            all_train_me[tr_x,f] = float('NaN')
+            all_train_m[tr_x,f]  = np.nan
+            all_train_me[tr_x,f] = np.nan
         if (force_idet == True) & (f == 3):
-            all_train_m[tr_x,:]  = float('NaN')
-            all_train_me[tr_x,:] = float('NaN')
+            all_train_m[tr_x,:]  = np.nan
+            all_train_me[tr_x,:] = np.nan
         del te_x,tr_x
 
     ### Calculate colors, color errors, and number of colors for each galaxy

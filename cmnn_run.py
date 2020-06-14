@@ -46,9 +46,10 @@ def run(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, te
     ### 3. Analyse the photo-z estimates (make statistics and plots of the results)
     os.system("echo 'Start cmnn_analysis.make_stats_file(): "+str(datetime.datetime.now())+\
         "' >> output/run_"+args.user_runid+"/timestamps.dat")
-    cmnn_analysis.make_tzpz_plot(verbose, runid)
     cmnn_analysis.make_stats_file(verbose, runid, stats_COR)
     cmnn_analysis.make_stats_plots(verbose=verbose, runid=runid)
+    cmnn_analysis.make_tzpz_plot(verbose, runid)
+    cmnn_analysis.make_hist_plots(verbose, runid)
 
 
 if __name__ == '__main__':

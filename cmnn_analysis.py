@@ -484,8 +484,8 @@ def make_hist_plots( verbose, runid ):
     fnm = 'output/run_'+runid+'/zphot.cat'
     ztrue  = np.loadtxt( fnm, dtype='float', usecols={1})
     zphot  = np.loadtxt( fnm, dtype='float', usecols={2})
-    Ncm    = np.loadtxt( fnm, dtype='int', usecols={4})
-    Ntrain = np.loadtxt( fnm, dtype='int', usecols={5})
+    Ncm    = np.loadtxt( fnm, dtype='float', usecols={4})
+    Ntrain = np.loadtxt( fnm, dtype='float', usecols={5})
     ztrain = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols={1})
 
     ### Histogram of redshifts: test true, test photoz, train z
@@ -509,20 +509,20 @@ def make_hist_plots( verbose, runid ):
     pfnm = 'output/run_'+runid+'/analysis/hist_ncm'
     fig = plt.figure(figsize=(8,8))
     plt.rcParams.update({'font.size':20})
-    plt.hist( Ncm, normed=True,bins=100,histtype='step',ls='solid',\
+    plt.hist( Ncm, bins=100,histtype='step',ls='solid',\
             lw=2,alpha=0.7,color='red')
     plt.xlabel('Size of CMNN Subset')
-    plt.ylabel('Fraction of Test Galaxies')
+    plt.ylabel('Number of Test Galaxies')
     plt.savefig(pfnm,bbox_inches='tight')
     if verbose: print('Wrote to: ',pfnm)
 
     pfnm = 'output/run_'+runid+'/analysis/hist_ntr'
     fig = plt.figure(figsize=(8,8))
     plt.rcParams.update({'font.size':20})
-    plt.hist( Ntrain, normed=True,bins=100,histtype='step',ls='solid',\
+    plt.hist( Ntrain, bins=100,histtype='step',ls='solid',\
             lw=2,alpha=0.7,color='red')
     plt.xlabel('Size of Training Set')
-    plt.ylabel('Fraction of Test Galaxies')
+    plt.ylabel('Number of Test Galaxies')
     plt.savefig(pfnm,bbox_inches='tight')
     if verbose: print('Wrote to: ',pfnm)
 
