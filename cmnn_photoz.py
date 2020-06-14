@@ -29,11 +29,26 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
     ###   Ncm         : the number of training-set galaxies in the color-matched subset
 
     ### Calculate the Mahalanobis Distance for each training set galaxy
-    MahalanobisDistance = np.nansum( ( test_c - train_c )**2 / test_ce**2, axis=1, dtype='float' )
+    # MahalanobisDistance = np.nansum( ( test_c - train_c )**2 / test_ce**2, axis=1, dtype='float' )
 
     ### Calculate the Degrees of Freedom for each training set galaxy
     ###  Choice of numerator/denominator is arbitrary, but keep denom != 0
-    DegreesOfFreedom    = np.nansum( ( test_c**2 + train_c**2 + 1.0 ) / ( test_c**2 + train_c**2 + 1.0 ), axis=1, dtype='int' )
+    # DegreesOfFreedom    = np.nansum( ( test_c**2 + train_c**2 + 1.0 ) / ( test_c**2 + train_c**2 + 1.0 ), \
+    #     axis=1, dtype='int' )
+
+    ### The Slow Way
+    MahalanobisDistance = np.zeros( len(train_c), dtype='float' )
+    DegreesOfFreedom    = np.zeros( len(train_c), dtype='int' )
+    for i in range(len(train_c)):
+        tmpDF = int(0)
+        tmpMD = float(0.00)
+        for c in range(5):
+            if np.isfinite(test_c[c]) & np.isfinite(train_c[i,c]):
+                tmpDF += int(1)
+                tmpMD += ( test_c[c] - train_c[i,c] )**2 / ( test_ce[c] )**2
+        MahalanobisDistance[i] = tmpMD
+        DegreesOfFreedom[i]    = tmpDF
+        del tmpDF,tmpMD
 
     ### Determine the appropriate threshold that should apply to each training set galaxy
     ### We use a look-up table; the slow way is: thresholds = chi2.ppf( ppf_value, DegreesOfFreedom )
@@ -237,8 +252,10 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
             trx = np.where( all_train_id[:] != all_test_id[i] )[0]
             results = return_photoz( all_test_c[i], all_test_ce[i], \
                 all_train_c[trx], all_train_tz[trx], \
-                cmnn_ppf, cmnn_thresh_table, cmnn_rsel, cmnn_minNc, cmnn_minNN)       
+                cmnn_ppf, cmnn_thresh_table, cmnn_rsel, cmnn_minNc, cmnn_minNN)
+            del trx       
         fout.write( '%10i %10.8f %10.8f %10.8f %10i \n' % \
             (all_test_id[i], all_test_tz[i], results[0], results[1], results[2]) )
+        del results
     fout.close()
     if verbose: print('Wrote to: output/run_'+runid+'/zphot.cat')
