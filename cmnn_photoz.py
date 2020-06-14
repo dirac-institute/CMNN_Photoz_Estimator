@@ -28,6 +28,8 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
     ###   PhotozError : the uncertainty in the photo-z for the test galaxy
     ###   Ncm         : the number of training-set galaxies in the color-matched subset
 
+    size_train = len(train_z)
+
     ### Calculate the Mahalanobis Distance for each training set galaxy
     MahalanobisDistance = np.nansum( ( test_c - train_c )**2 / test_ce**2, axis=1, dtype='float' )
 
@@ -148,7 +150,7 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
 
     del index, MahalanobisDistance, DegreesOfFreedom, thresholds 
 
-    return [Photoz, PhotozError, Ncm]
+    return [Photoz, PhotozError, Ncm, size_train]
 
 
 def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, cmnn_ppmag, cmnn_ppclr):
@@ -251,8 +253,8 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
                 all_train_c[trx], all_train_tz[trx], \
                 cmnn_ppf, cmnn_thresh_table, cmnn_rsel, cmnn_minNc, cmnn_minNN)
             del trx       
-        fout.write( '%10i %10.8f %10.8f %10.8f %10i \n' % \
-            (all_test_id[i], all_test_tz[i], results[0], results[1], results[2]) )
+        fout.write( '%10i %10.8f %10.8f %10.8f %10i %10i \n' % \
+            (all_test_id[i], all_test_tz[i], results[0], results[1], results[2], results[3]) )
         del results
     fout.close()
     if verbose: print('Wrote to: output/run_'+runid+'/zphot.cat')
