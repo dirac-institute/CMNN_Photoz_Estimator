@@ -27,10 +27,6 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
     ###   Photoz      : the photometric redshift for the test galaxy
     ###   PhotozError : the uncertainty in the photo-z for the test galaxy
     ###   Ncm         : the number of training-set galaxies in the color-matched subset
-    ###   size_train  : the size of the training set passed to return_photoz()
-
-    ### Record the size of the training subset passed for this test galaxy
-    size_train = len(train_z)
 
     ### Calculate the Mahalanobis Distance for each training set galaxy
     MahalanobisDistance = np.nansum( ( test_c - train_c )**2 / test_ce**2, axis=1, dtype='float' )
@@ -153,7 +149,7 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
 
     del index, MahalanobisDistance, DegreesOfFreedom, thresholds 
 
-    return [Photoz, PhotozError, Ncm, size_train]
+    return [Photoz, PhotozError, Ncm]
 
 
 def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, cmnn_ppmag, cmnn_ppclr):
@@ -162,19 +158,19 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
         print('Starting cmnn_photoz.make_zphot(), ',datetime.datetime.now())
 
     if verbose: print('Reading test and train catalogs in output/run_'+runid+'/')
-    all_test_id = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='int', usecols={0} )
-    all_test_tz = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols={1} )
-    all_test_m  = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols={2,4,6,8,10,12} )
-    # all_test_me = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols={3,5,7,9,11,13} )
-    all_test_c  = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols={14,16,18,20,22} )
-    all_test_ce = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols={15,17,19,21,23} )
+    all_test_id = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='int', usecols=(0) )
+    all_test_tz = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(1) )
+    all_test_m  = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(2,4,6,8,10,12) )
+    # all_test_me = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(3,5,7,9,11,13) )
+    all_test_c  = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(14,16,18,20,22) )
+    all_test_ce = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(15,17,19,21,23) )
 
-    all_train_id = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='int', usecols={0} )
-    all_train_tz = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols={1} )
-    all_train_m  = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols={2,4,6,8,10,12} )
-    # all_train_me = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols={3,5,7,9,11,13} )
-    all_train_c  = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols={14,16,18,20,22} )
-    # all_train_ce = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols={15,17,19,21,23} )
+    all_train_id = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='int', usecols=(0) )
+    all_train_tz = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(1) )
+    all_train_m  = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(2,4,6,8,10,12) )
+    # all_train_me = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(3,5,7,9,11,13) )
+    all_train_c  = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(14,16,18,20,22) )
+    # all_train_ce = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(15,17,19,21,23) )
 
     if verbose:
         print('Test set array lengths.')
@@ -262,6 +258,7 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
                 (all_train_m[:,3] >= ilow) & (all_train_m[:,3] <= ihi) &\
                 (all_train_c[:,1] >= grlow) & (all_train_c[:,1] <= grhi) &\
                 (all_train_c[:,2] >= rilow) & (all_train_c[:,2] <= rihi) )[0]
+            size_ntrain = len(trx)
             ### now get the photoz for this test galaxy
             results = return_photoz( all_test_c[i], all_test_ce[i], \
                 all_train_c[trx], all_train_tz[trx], \
@@ -270,12 +267,13 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
         ### if cmnn_ppmag and cmnn_ppclr are false, we use the whole training set
         else:
             trx = np.where( all_train_id[:] != all_test_id[i] )[0]
+            size_ntrain = len(trx)
             results = return_photoz( all_test_c[i], all_test_ce[i], \
                 all_train_c[trx], all_train_tz[trx], \
                 cmnn_ppf, cmnn_thresh_table, cmnn_rsel, cmnn_minNc, cmnn_minNN)
             del trx       
         fout.write( '%10i %10.8f %10.8f %10.8f %10i %10i \n' % \
-            (all_test_id[i], all_test_tz[i], results[0], results[1], results[2], results[3]) )
-        del results
+            (all_test_id[i], all_test_tz[i], results[0], results[1], results[2], size_ntrain) )
+        del results,size_ntrain
     fout.close()
     if verbose: print('Wrote to: output/run_'+runid+'/zphot.cat')

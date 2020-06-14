@@ -28,15 +28,15 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
     #     strimagmax = str(np.round(imagmax,2))
     #     if verbose: print("awk '{if ($5<"+strimagmax+") print $0}' LSST_galaxy_catalog_full.dat > temp.dat")
     #     os.system("awk '{if ($5<"+strimagmax+") print $0}' LSST_galaxy_catalog_full.dat > temp.dat")
-    #     all_id = np.loadtxt( 'temp.dat', dtype='float', usecols={0})
-    #     all_tz = np.loadtxt( 'temp.dat', dtype='float', usecols={1})
-    #     all_tm = np.loadtxt( 'temp.dat', dtype='float', usecols={2,3,4,5,6,7})
+    #     all_id = np.loadtxt( 'temp.dat', dtype='float', usecols=(0))
+    #     all_tz = np.loadtxt( 'temp.dat', dtype='float', usecols=(1))
+    #     all_tm = np.loadtxt( 'temp.dat', dtype='float', usecols=(2,3,4,5,6,7))
     #     if verbose: print('rm temp.dat')
     #     os.system('rm temp.dat')
     # else:
-    #     all_id = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols={0})
-    #     all_tz = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols={1})
-    #     all_tm = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols={2,3,4,5,6,7})
+    #     all_id = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols=(0))
+    #     all_tz = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols=(1))
+    #     all_tm = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols=(2,3,4,5,6,7))
 
     ### Check if the gzip needs unzipping
     if (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat' ) == False) & \
@@ -52,9 +52,9 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
         print('Exit (missing input file).')
         exit()
 
-    all_id = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols={0})
-    all_tz = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols={1})
-    all_tm = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols={2,3,4,5,6,7})
+    all_id = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols=(0)
+    all_tz = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols=(1))
+    all_tm = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols=(2,3,4,5,6,7))
 
     ### Ensure needed quantities are in numpy arrays
     gamma = np.asarray( [0.037,0.038,0.039,0.039,0.04,0.04], dtype='float' )
@@ -193,18 +193,14 @@ def make_plots(verbose, runid):
         os.system('mkdir output/run_'+runid+'/plot_cats')
 
     fnm = 'output/run_'+runid+'/test.cat'
-    test_tz = np.loadtxt( fnm, dtype='float', usecols={1})
-    test_m  = np.loadtxt( fnm, dtype='float', usecols={2,4,6,8,10,12})
-    test_me = np.loadtxt( fnm, dtype='float', usecols={3,5,7,9,11,13})
-    # test_c  = np.loadtxt( fnm, dtype='float', usecols={14,16,18,20,22})
-    # test_ce = np.loadtxt( fnm, dtype='float', usecols={15,17,19,21,23})
+    test_tz = np.loadtxt( fnm, dtype='float', usecols=(1))
+    test_m  = np.loadtxt( fnm, dtype='float', usecols=(2,4,6,8,10,12)
+    test_me = np.loadtxt( fnm, dtype='float', usecols=(3,5,7,9,11,13))
 
     fnm = 'output/run_'+runid+'/train.cat'
-    train_tz = np.loadtxt( fnm, dtype='float', usecols={1})
-    train_m  = np.loadtxt( fnm, dtype='float', usecols={2,4,6,8,10,12})
-    train_me = np.loadtxt( fnm, dtype='float', usecols={3,5,7,9,11,13})
-    # train_c  = np.loadtxt( fnm, dtype='float', usecols={14,16,18,20,22})
-    # train_ce = np.loadtxt( fnm, dtype='float', usecols={15,17,19,21,23})
+    train_tz = np.loadtxt( fnm, dtype='float', usecols=(1))
+    train_m  = np.loadtxt( fnm, dtype='float', usecols=(2,4,6,8,10,12))
+    train_me = np.loadtxt( fnm, dtype='float', usecols=(3,5,7,9,11,13))
 
 
     ### Histogram of true redshift for train and test
