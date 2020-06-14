@@ -52,7 +52,7 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
         print('Exit (missing input file).')
         exit()
 
-    all_id = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols=(0)
+    all_id = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols=(0))
     all_tz = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols=(1))
     all_tm = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols=(2,3,4,5,6,7))
 
@@ -194,7 +194,7 @@ def make_plots(verbose, runid):
 
     fnm = 'output/run_'+runid+'/test.cat'
     test_tz = np.loadtxt( fnm, dtype='float', usecols=(1))
-    test_m  = np.loadtxt( fnm, dtype='float', usecols=(2,4,6,8,10,12)
+    test_m  = np.loadtxt( fnm, dtype='float', usecols=(2,4,6,8,10,12))
     test_me = np.loadtxt( fnm, dtype='float', usecols=(3,5,7,9,11,13))
 
     fnm = 'output/run_'+runid+'/train.cat'

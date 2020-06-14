@@ -329,7 +329,7 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
 
         ### Initialize the plot
         fig = plt.figure(figsize=(12,8))
-        plt.rcParams.update(('font.size':20))
+        plt.rcParams.update({'font.size':20})
 
         ### Show the SRD target values, if desired
         if show_SRD == True:
@@ -372,7 +372,7 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
         ### Set axis parameters and write plot to file
         plt.xlabel( 'Photometric Redshift' )
         plt.ylabel( stats_labels[s] )
-        legend=plt.legend(loc='best',numpoints=1,prop=('size':14),labelspacing=0.15) #,title=lgnd_title)
+        legend=plt.legend(loc='best',numpoints=1,prop={'size':14},labelspacing=0.15) #,title=lgnd_title)
         # legend.get_title().set_fontsize('14') 
 
         if len(multi_run_ids) == 1:
@@ -418,7 +418,7 @@ def make_tzpz_plot( verbose, runid, \
 
     ### Initialize the plot
     fig = plt.figure(figsize=(8,8))
-    plt.rcParams.update(('font.size':20))
+    plt.rcParams.update({'font.size':20})
 
     ### Draw a line of y=x to guide the eye
     plt.plot([0.0,3.0],[0.0,3.0],color='black')
@@ -462,7 +462,7 @@ def make_tzpz_plot( verbose, runid, \
     plt.xlim([0.0,3.0])
     plt.ylim([0.0,3.0])
     if outliers_label:
-        plt.legend( loc='upper center', numpoints=1, markerscale=3, prop=('size':16), labelspacing=0.5)
+        plt.legend( loc='upper center', numpoints=1, markerscale=3, prop={'size':16}, labelspacing=0.5)
 
     ofnm = 'output/run_'+runid+'/analysis/tzpz'
     plt.savefig(ofnm,bbox_inches='tight')
@@ -491,7 +491,7 @@ def make_hist_plots( verbose, runid ):
     ### Histogram of redshifts: test true, test photoz, train z
     pfnm = 'output/run_'+runid+'/analysis/hist_z'
     fig = plt.figure(figsize=(8,8))
-    plt.rcParams.update(('font.size':20))
+    plt.rcParams.update({'font.size':20})
     plt.hist( ztrain, normed=True,bins=100,histtype='step',ls='solid',\
             lw=2,alpha=0.5,color='grey',label='train z')
     plt.hist( ztrue, normed=True,bins=100,histtype='step',ls='solid',\
@@ -501,14 +501,14 @@ def make_hist_plots( verbose, runid ):
     plt.xlabel('Redshift')
     plt.ylabel('Fraction of Galaxies')
     plt.xlim([0.0,3.0])
-    plt.legend( loc='upper right', numpoints=1, markerscale=3, prop=('size':16), labelspacing=0.5)
+    plt.legend( loc='upper right', numpoints=1, markerscale=3, prop={'size':16}, labelspacing=0.5)
     plt.savefig(pfnm,bbox_inches='tight')
     if verbose: print('Wrote to: ',pfnm)
 
     ### Histogram of Ncm: number of training galaxies in the CMNN subset
     pfnm = 'output/run_'+runid+'/analysis/hist_ncm'
     fig = plt.figure(figsize=(8,8))
-    plt.rcParams.update(('font.size':20))
+    plt.rcParams.update({'font.size':20})
     plt.hist( Ncm, bins=100,histtype='step',ls='solid',\
             lw=2,alpha=0.7,color='red')
     plt.xlabel('Size of CMNN Subset')
@@ -518,7 +518,7 @@ def make_hist_plots( verbose, runid ):
 
     pfnm = 'output/run_'+runid+'/analysis/hist_ntr'
     fig = plt.figure(figsize=(8,8))
-    plt.rcParams.update(('font.size':20))
+    plt.rcParams.update({'font.size':20})
     plt.hist( Ntrain, bins=100,histtype='step',ls='solid',\
             lw=2,alpha=0.7,color='red')
     plt.xlabel('Size of Training Set')
