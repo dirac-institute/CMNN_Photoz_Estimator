@@ -501,6 +501,7 @@ def make_hist_plots( verbose, runid ):
     plt.xlabel('Redshift')
     plt.ylabel('Fraction of Galaxies')
     plt.xlim([0.0,3.0])
+    plt.legend( loc='upper right', numpoints=1, markerscale=3, prop={'size':16}, labelspacing=0.5)
     plt.savefig(pfnm,bbox_inches='tight')
     if verbose: print('Wrote to: ',pfnm)
 
@@ -508,9 +509,20 @@ def make_hist_plots( verbose, runid ):
     pfnm = 'output/run_'+runid+'/analysis/hist_ncm'
     fig = plt.figure(figsize=(8,8))
     plt.rcParams.update({'font.size':20})
-    plt.hist( Ncm, log=True,normed=True,bins=100,histtype='step',ls='solid',\
+    plt.hist( Ncm, normed=True,bins=100,histtype='step',ls='solid',\
             lw=2,alpha=0.7,color='red')
     plt.xlabel('Size of CMNN Subset')
     plt.ylabel('Fraction of Test Galaxies')
     plt.savefig(pfnm,bbox_inches='tight')
     if verbose: print('Wrote to: ',pfnm)
+
+    pfnm = 'output/run_'+runid+'/analysis/hist_ntr'
+    fig = plt.figure(figsize=(8,8))
+    plt.rcParams.update({'font.size':20})
+    plt.hist( Ntrain, normed=True,bins=100,histtype='step',ls='solid',\
+            lw=2,alpha=0.7,color='red')
+    plt.xlabel('Size of Training Set')
+    plt.ylabel('Fraction of Test Galaxies')
+    plt.savefig(pfnm,bbox_inches='tight')
+    if verbose: print('Wrote to: ',pfnm)
+
