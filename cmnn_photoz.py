@@ -43,9 +43,9 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
 
     ### Identify the indicies of the CMNN subset of training-set galaxies
     index = np.where( \
-        ( DegreesOfFreedom >= minimum_Ncolors ) and \
-        ( thresholds > 0.00010 ) and \
-        ( MahalanobisDistance > 0.00010 ) and \
+        ( DegreesOfFreedom >= minimum_Ncolors ) & \
+        ( thresholds > 0.00010 ) & \
+        ( MahalanobisDistance > 0.00010 ) & \
         ( MahalanobisDistance <= thresholds ) )[0]
 
     ### Determine the photometric redshift for this test galaxy
@@ -87,8 +87,8 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
     if len(index) < minimum_Nneighbors:
         ### find out how many there are we could potentially use
         index2 = np.where( \
-            ( DegreesOfFreedom >= minimum_Ncolors ) and \
-            ( thresholds > 0.00010 ) and \
+            ( DegreesOfFreedom >= minimum_Ncolors ) & \
+            ( thresholds > 0.00010 ) & \
             ( MahalanobisDistance > 0.00010 ) )[0]
 
         ### if there's more than the minimum number, use them
