@@ -29,26 +29,26 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
     ###   Ncm         : the number of training-set galaxies in the color-matched subset
 
     ### Calculate the Mahalanobis Distance for each training set galaxy
-    # MahalanobisDistance = np.nansum( ( test_c - train_c )**2 / test_ce**2, axis=1, dtype='float' )
+    MahalanobisDistance = np.nansum( ( test_c - train_c )**2 / test_ce**2, axis=1, dtype='float' )
 
     ### Calculate the Degrees of Freedom for each training set galaxy
     ###  Choice of numerator/denominator is arbitrary, but keep denom != 0
-    # DegreesOfFreedom    = np.nansum( ( test_c**2 + train_c**2 + 1.0 ) / ( test_c**2 + train_c**2 + 1.0 ), \
-    #     axis=1, dtype='int' )
+    DegreesOfFreedom    = np.nansum( ( test_c**2 + train_c**2 + 1.0 ) / ( test_c**2 + train_c**2 + 1.0 ), \
+        axis=1, dtype='int' )
 
-    ### The Slow Way
-    MahalanobisDistance = np.zeros( len(train_c), dtype='float' )
-    DegreesOfFreedom    = np.zeros( len(train_c), dtype='int' )
-    for i in range(len(train_c)):
-        tmpDF = int(0)
-        tmpMD = float(0.00)
-        for c in range(5):
-            if np.isfinite(test_c[c]) & np.isfinite(train_c[i,c]):
-                tmpDF += int(1)
-                tmpMD += ( test_c[c] - train_c[i,c] )**2 / ( test_ce[c] )**2
-        MahalanobisDistance[i] = tmpMD
-        DegreesOfFreedom[i]    = tmpDF
-        del tmpDF,tmpMD
+    ### The Slow Way **IT'S SO SLOW I COULDN'T FULLY VERIFY IT**
+    # MahalanobisDistance = np.zeros( len(train_c), dtype='float' )
+    # DegreesOfFreedom    = np.zeros( len(train_c), dtype='int' )
+    # for i in range(len(train_c)):
+    #     tmpDF = int(0)
+    #     tmpMD = float(0.00)
+    #     for c in range(5):
+    #         if np.isfinite(test_c[c]) & np.isfinite(train_c[i,c]):
+    #             tmpDF += int(1)
+    #             tmpMD += ( test_c[c] - train_c[i,c] )**2 / ( test_ce[c] )**2
+    #     MahalanobisDistance[i] = tmpMD
+    #     DegreesOfFreedom[i]    = tmpDF
+    #     del tmpDF,tmpMD
 
     ### Determine the appropriate threshold that should apply to each training set galaxy
     ### We use a look-up table; the slow way is: thresholds = chi2.ppf( ppf_value, DegreesOfFreedom )
@@ -68,34 +68,29 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
     if len(index) >= minimum_Nneighbors:
         ### choose randomly from the color matched sample
         if selection_mode == 0:
-            rval  = int(np.random.uniform(low=0, high=len(index)))
-            rival = index[rval]
+            rival       = np.random.choice( index, size=1, replace=False )[0]
             Photoz      = train_z[rival]
             PhotozError = np.std( train_z[index] )
-            del rval,rival
+            del rival
         ### choose the nearest neighbor, the best color match
         if selection_mode == 1:
             tx = np.where( MahalanobisDistance[index] == np.nanmin(MahalanobisDistance[index]) )[0]
             if len(tx) == 1:
-                rval = int(tx)
+                rval = tx[0]
             if len(tx) > 1:
-                # if there's more than one best match, choose randomly
-                tval = np.random.uniform(low=0,high=len(tx))
-                rval = int(tx[tval])
-                del tval
-            rival = index[rval]
-            Photoz      = train_z[rival]
+                # if there's more than one best match (rare but possible), choose randomly
+                rval = np.random.choice( tx, size=1, replace=False )[0]
+            Photoz      = train_z[index[rval]]
             PhotozError = np.std( train_z[index] )
             del tx,rval,rival
         ### weight by how good the color match is and then choose randomly
         if selection_mode == 2:
-            tweight = float(1.00) / MahalanobisDistance[index]
-            weight  = tweight / np.sum(tweight)
-            rval    = np.random.choice( range(len(index)), size=1, replace=False, p=weight )
-            rival   = index[rval]
+            tweights    = float(1.00) / MahalanobisDistance[index]
+            weights     = tweights / np.sum(tweights)
+            rival       = np.random.choice( index, size=1, replace=False, p=weights )[0]
             Photoz      = train_z[rival]
             PhotozError = np.std( train_z[index] )
-            del tweight,weight,rval,rival
+            del tweights,weights,rival
         Ncm = len(index)
 
     ### if there are too few training-set galaxies in the CMNN subset
@@ -126,7 +121,7 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
             del temp,new_ppf_value
             ### choose randomly from nearest dselect galaxies
             if selection_mode == 0:
-                rval   = int( np.floor( np.random.uniform(low=0, high=minimum_Nneighbors) ) )
+                rval   = np.random.choice( minimum_Nneighbors, size=1, replace=False )[0]
                 Photoz = new_TZ[rval]
                 del rval
             ### choose nearest neighbour, use nearest dselect for error
@@ -134,11 +129,11 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
                 Photoz = new_TZ[0]
             ### weight by how good the color match is and then select
             if selection_mode == 2:
-                tweight = float(1.00) / new_MD
-                weight = tweight / np.sum(tweight)
-                cx     = np.random.choice( range(len(new_TZ)), size=1, replace=False, p=weight )
-                Photoz = new_TZ[cx]
-                del tweight,weight,cx
+                tweights = float(1.00) / new_MD
+                weights  = tweights / np.sum(tweights)
+                cx       = np.random.choice( minimum_Nneighbors, size=1, replace=False, p=weights )[0]
+                Photoz   = new_TZ[cx]
+                del tweights,weights,cx
             del new_MD,new_TZ,new_DF
             ### set the number in the CMNN subset to be minimum_Nneighbors
             Ncm = minimum_Nneighbors
@@ -201,6 +196,8 @@ def make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmn
     ### Calculate photometric redshifts for all test-set galaxies and write to zphot file
     if verbose: print('Starting to create list of photo-z: output/run_'+runid+'/zphot.cat')
     fout = open('output/run_'+runid+'/zphot.cat','w')
+    fout.write('# cmnn_minNc=%3i cmnn_minNN=%3i cmnn_ppf=%4.2f cmnn_rsel=%i cmnn_ppmag=%r cmnn_ppclr=%r \n' % \
+        (cmnn_minNc,cmnn_minNN,cmnn_ppf,cmnn_rsel,cmnn_ppmag,cmnn_ppclr))
     for i in range(len(all_test_id)):
         ### if cmnn_ppmag or cmnn_ppclr is true, we only use part of the training set
         if cmnn_ppmag or cmnn_ppclr:
