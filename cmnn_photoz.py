@@ -39,7 +39,7 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
     ###  Choice of numerator/denominator is arbitrary, but keep denom != 0
     ###  Use floats even though 
     DegreesOfFreedom    = np.nansum( ( test_c**2 + train_c**2 + 1.0 ) / ( test_c**2 + train_c**2 + 1.0 ), \
-        axis=1, dtype='float' )
+        axis=1, dtype='int' )
 
     ### The Slow Way **IT'S SO SLOW I COULDN'T FULLY VERIFY IT**
     # MahalanobisDistance = np.zeros( len(train_c), dtype='float' )
