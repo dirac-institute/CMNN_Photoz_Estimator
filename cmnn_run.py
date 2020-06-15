@@ -19,28 +19,27 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-def run(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, test_N, train_N, \
+def run(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, force_gridet, test_N, train_N, \
     cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, cmnn_ppmag, cmnn_ppclr, stats_COR):
 
     ### Run each of the three components of the CMNN Estimator in turn:
-    ###  1. Create test and training set catalogs based on user input.
-    ###  2. Estimate photo-z with user-supplied parameters.
+    ###  1. Create test and training set catalogs and make plots.
+    ###  2. Estimate photometric redshifts.
     ###  3. Calculate statistical measures and make analysis plots.
+    os.system("echo 'Start cmnn_run.run():  "+str(datetime.datetime.now())+\
+        "' >> output/run_"+args.user_runid+"/timestamps.dat")
 
     ### 1. Create the catalogs, and make simple histograms
     os.system("echo 'Start cmnn_catalog.make_test_and_train(): "+str(datetime.datetime.now())+\
         "' >> output/run_"+args.user_runid+"/timestamps.dat")
     cmnn_catalog.make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, \
-        force_idet, test_N, train_N, cmnn_minNc)
-
-    os.system("echo 'Start cmnn_catalog.make_plots(): "+str(datetime.datetime.now())+\
-        "' >> output/run_"+args.user_runid+"/timestamps.dat")
+        force_idet, force_gridet, test_N, train_N, cmnn_minNc)
     cmnn_catalog.make_plots(verbose, runid)
 
     ### 2. Estimate photometric redshifts
     os.system("echo 'Start cmnn_photoz.make_zphot(): "+str(datetime.datetime.now())+\
         "' >> output/run_"+args.user_runid+"/timestamps.dat")
-    cmnn_photoz.make_zphot(verbose, runid, force_idet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, \
+    cmnn_photoz.make_zphot(verbose, runid, force_idet, force_gridet, cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, \
         cmnn_ppmag, cmnn_ppclr)
 
     ### 3. Analyse the photo-z estimates (make statistics and plots of the results)
@@ -50,6 +49,9 @@ def run(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, te
     cmnn_analysis.make_stats_plots(verbose=verbose, runid=runid)
     cmnn_analysis.make_tzpz_plot(verbose, runid)
     cmnn_analysis.make_hist_plots(verbose, runid)
+
+    os.system("echo 'Finished cmnn_run.run(): "+str(datetime.datetime.now())+\
+        "' >> output/run_"+args.user_runid+"/timestamps.dat")
 
 
 if __name__ == '__main__':
@@ -109,6 +111,12 @@ if __name__ == '__main__':
     ### Example:     python cmnn_run.py --force_idet False
     parser.add_argument('--force_idet', action='store', dest='user_force_idet', type=str2bool, \
         help='force i-band detection for all galaxies', default=True, choices=[True,False])
+
+    ### Argument:    force_gridet, type bool 1, default True
+    ### Description: force detection in g-, r-, and i-band for all test and train galaxies
+    ### Example:     python cmnn_run.py --force_gridet False
+    parser.add_argument('--force_gridet', action='store', dest='user_force_gridet', type=str2bool, \
+        help='force g,r,i-band detection for all galaxies', default=True, choices=[True,False])
 
     ### Argument:    test_N, type int 1, default 40000
     ### Description: number of test-set galaxies
@@ -199,7 +207,7 @@ if __name__ == '__main__':
         print('Exit (bad mag inputs).')
         exit()
 
-    ### Check the other inputs
+    ### Check the other inputs; any of the below might set fail to be True
     fail = False
 
     ### Set the minimum and maximum magnitudes allowed for simulating LSST data
@@ -258,6 +266,12 @@ if __name__ == '__main__':
         print('  force_idet : %r \n' % args.user_force_idet)
         fail = True
 
+    if (args.user_cmnn_ppclr == True) & (args.user_force_gridet == False):
+        print('Error. Must set force_gridet=True in order to set cmnn_ppclr=True.')
+        print('  cmnn_ppclr : %r \n' % args.user_cmnn_ppclr)
+        print('  force_gridet : %r \n' % args.user_force_gridet)
+        fail = True
+
     if fail:
         print('Exit (bad user inputs, as listed above).')
         exit()
@@ -284,6 +298,7 @@ if __name__ == '__main__':
             ('train_mcut',args.user_train_mcut[0],args.user_train_mcut[1],args.user_train_mcut[2],\
                 args.user_train_mcut[3],args.user_train_mcut[4],args.user_train_mcut[5]) )
         print( '%-11s %r' % ('force_idet',args.user_force_idet) )
+        print( '%-11s %r' % ('force_gridet',args.user_force_gridet) )
         print( '%-11s %i' % ('test_N',args.user_test_N) )
         print( '%-11s %i' % ('train_N',args.user_train_N) )
         print( '%-11s %i' % ('cmnn_minNc',args.user_cmnn_minNc) )
@@ -311,6 +326,7 @@ if __name__ == '__main__':
         ('train_mcut',args.user_train_mcut[0],args.user_train_mcut[1],args.user_train_mcut[2],\
             args.user_train_mcut[3],args.user_train_mcut[4],args.user_train_mcut[5]) )
     fout.write( '%-11s %r \n' % ('force_idet',args.user_force_idet) )
+    fout.write( '%-11s %r \n' % ('force_gridet',args.user_force_gridet) )
     fout.write( '%-11s %i \n' % ('test_N',args.user_test_N) )
     fout.write( '%-11s %i \n' % ('train_N',args.user_train_N) )
     fout.write( '%-11s %i \n' % ('cmnn_minNc',args.user_cmnn_minNc) )
@@ -326,16 +342,12 @@ if __name__ == '__main__':
     ### Pass user input to run()
     if args.user_verbose: print(' ')
     if args.user_verbose: print('Starting cmnn_run.run: ', datetime.datetime.now())
-    os.system("echo 'Start cmnn_run.run():  "+str(datetime.datetime.now())+\
-        "' >> output/run_"+args.user_runid+"/timestamps.dat")
     run( args.user_verbose, args.user_runid, \
         args.user_test_m5, args.user_train_m5, args.user_test_mcut, args.user_train_mcut, \
-        args.user_force_idet, \
+        args.user_force_idet, args.user_force_gridet, \
         args.user_test_N, args.user_train_N, \
         args.user_cmnn_minNc, args.user_cmnn_minNN, args.user_cmnn_ppf, args.user_cmnn_rsel, \
         args.user_cmnn_ppmag, args.user_cmnn_ppclr, \
         args.user_stats_COR )
     if args.user_verbose: print('Finished cmnn_run.run: ', datetime.datetime.now())
-    os.system("echo 'Finished cmnn_run.run(): "+str(datetime.datetime.now())+\
-        "' >> output/run_"+args.user_runid+"/timestamps.dat")
 

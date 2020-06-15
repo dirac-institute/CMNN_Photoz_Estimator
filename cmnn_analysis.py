@@ -521,7 +521,7 @@ def make_hist_plots( verbose, runid ):
     plt.rcParams.update({'font.size':20})
     plt.hist( Ntrain, bins=100,histtype='step',ls='solid',\
             lw=2,alpha=0.7,color='red')
-    plt.xlabel('Size of Training Set')
+    plt.xlabel('Size of Post-Cuts Training Set')
     plt.ylabel('Number of Test Galaxies')
     plt.savefig(pfnm,bbox_inches='tight')
     if verbose: print('Wrote to: ',pfnm)

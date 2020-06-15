@@ -3,13 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 
+### Make test and training set catalogs based on user input, and then
+###   generate plots to display their characteristics.
+### All inputs to make_test_and_train are described in cmnn_run.py.
+### It is assumed that input values were vetted by cmnn_run.py,
+###   and are not reconfirmed to be valid by this code.
 
-def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, \
+
+def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, force_gridet, \
     test_N, train_N, cmnn_minNc):
-
-    ### Make test and training set catalogs based on user input.
-    ### All inputs are described in cmnn_run.py, and they are assumed to
-    ###  have been vetted by cmnn_run.py, and are not rechecked here.
 
     if verbose:
         print(' ')
@@ -18,11 +20,24 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
     ### Read in the raw catalog of galaxies
     if verbose: print('Read the mock catalog of true redshifts and magnitudes.')
 
-    ### This commented-out code can be used to speed up the catalog read, under some conditions,
-    ###    BUT ONLY WHEN the FULL catalog is being used. But that is not the default.
+    ### # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    ### UNCOMMENT IF YOU ARE USING THE FULL MOCK CATALOG OF GALAXIES
+    ###   (AND comment out the read of the smaller file, below)
+    ### Check if the gzip needs unzipping
+    # if (os.path.isfile( 'LSST_galaxy_catalog_full.dat' ) == False) & \
+    #    (os.path.isfile( 'LSST_galaxy_catalog_full.dat.gz' ) == True):
+    #     os.system('gunzip LSST_galaxy_catalog_full.dat.gz')
+    # if (os.path.isfile( 'LSST_galaxy_catalog_full.dat' ) == False) & \
+    #    (os.path.isfile( 'LSST_galaxy_catalog_full.dat.gz' ) == False):
+    #     print('Error. Mock galaxy catalog file is missing or misnamed.')
+    #     print('Required to have one of the following:')
+    #     print('  LSST_galaxy_catalog_full.dat')
+    #     print('  LSST_galaxy_catalog_full.dat.gz')
+    #     print('Exit (missing input file).')
+    #     exit()
     # if force_idet:
-    #     ### Speed up this read by dropping galaxies we don't need:
-    #     ###  any galaxy that's more than half a mag fainter than the faintest i-band cut
+    #     ### Can speed up this read by dropping galaxies we don't need, i.e., any galaxy
+    #     ###  that is more than half a mag fainter than the faintest i-band cut
     #     if verbose: print('Speed things up using awk to pre-select useful galaxies from big data file.')
     #     imagmax = np.max( [ test_mcut[3], train_mcut[3] ] ) + 0.5
     #     strimagmax = str(np.round(imagmax,2))
@@ -34,9 +49,11 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
     #     if verbose: print('rm temp.dat')
     #     os.system('rm temp.dat')
     # else:
+    #     ### Otherwise just have to read the whole thing
     #     all_id = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols=(0))
     #     all_tz = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols=(1))
     #     all_tm = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols=(2,3,4,5,6,7))
+    ### # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
     ### Check if the gzip needs unzipping
     if (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat' ) == False) & \
@@ -107,22 +124,29 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
     ### Apply the magnitude cuts, set values to np.nan if not detected
     ### If the user desired to force a detection in i-band, then for all galaxies
     ###   undetected in i-band, set all filters' apparent mags to np.nan
+    ### Same for forcing detections in gri.
     if verbose: print('Applying the magnitude cuts.')
     for f in range(6):
         te_x = np.where( all_test_m[:,f] > np_test_mcut[f] )[0]
         if len(te_x) > 0:
             all_test_m[te_x,f]  = np.nan
             all_test_me[te_x,f] = np.nan
-        if (force_idet == True) & (f == 3):
-            all_test_m[te_x,:]  = np.nan
-            all_test_me[te_x,:] = np.nan
+            if (force_idet == True) & (f == 3):
+                all_test_m[te_x,:]  = np.nan
+                all_test_me[te_x,:] = np.nan
+            if (force_gridet == True) & ((f == 1) | (f == 2) | (f == 3)):
+                all_test_m[te_x,:]  = np.nan
+                all_test_me[te_x,:] = np.nan
         tr_x = np.where( all_train_m[:,f] > np_train_mcut[f] )[0]
         if len(tr_x) > 0:
             all_train_m[tr_x,f]  = np.nan
             all_train_me[tr_x,f] = np.nan
-        if (force_idet == True) & (f == 3):
-            all_train_m[tr_x,:]  = np.nan
-            all_train_me[tr_x,:] = np.nan
+            if (force_idet == True) & (f == 3):
+                all_train_m[tr_x,:]  = np.nan
+                all_train_me[tr_x,:] = np.nan
+            if (force_gridet == True) & ((f == 1) | (f == 2) | (f == 3)):
+                all_train_m[tr_x,:]  = np.nan
+                all_train_me[tr_x,:] = np.nan
         del te_x,tr_x
 
     ### Calculate colors, color errors, and number of colors for each galaxy
@@ -149,6 +173,7 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
         print('Exit (inputs too constraining to build test/train set).')
         exit()
     else:
+
         ### Create test.cat
         if verbose: print('Opening and writing to ','output/run_'+runid+'/test.cat')
         te_rx = np.random.choice( te_x, size=test_N, replace=False )
@@ -162,6 +187,7 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
             test_fout.write('\n')
         test_fout.close()
         del te_rx,test_fout
+
         ### Create train.cat
         if verbose: print('Opening and writing to ','output/run_'+runid+'/train.cat')
         tr_rx = np.random.choice( tr_x, size=train_N, replace=False )
@@ -202,7 +228,6 @@ def make_plots(verbose, runid):
     train_m  = np.loadtxt( fnm, dtype='float', usecols=(2,4,6,8,10,12))
     train_me = np.loadtxt( fnm, dtype='float', usecols=(3,5,7,9,11,13))
 
-
     ### Histogram of true redshift for train and test
     pfnm = 'output/run_'+runid+'/plot_cats/hist_ztrue'
     fig  = plt.figure(figsize=(10,7))
@@ -234,7 +259,7 @@ def make_plots(verbose, runid):
             color=filt_colors[f],label='train '+filt_names[f])
         del tex,trx
     plt.xlabel('Observed Apparent Magnitude')
-    plt.ylabel('Fraction of Galaxies')
+    plt.ylabel('Cumulative Fraction of Galaxies')
     plt.legend(loc='upper left', prop={'size':16}, labelspacing=0.5)
     plt.savefig(pfnm,bbox_inches='tight')
     if verbose: print('Made '+pfnm)
@@ -269,12 +294,13 @@ def make_plots(verbose, runid):
     filt_colors = ['darkviolet','darkgreen','red','darkorange','brown','black']
     for f in range(6):
         tex = np.where( np.isfinite(test_m[:,f]) )[0]
-        tx = np.random.choice( tex, size=10000, replace=False )
+        tx = np.random.choice( tex, size=5000, replace=False )
         plt.plot( test_m[tx,f], test_me[tx,f], 'o',alpha=0.5,mew=0, \
             color=filt_colors[f],label=filt_names[f])
         del tex,tx
     plt.xlabel('Observed Apparent Magnitude')
     plt.ylabel('Apparent Magnitude Error')
+    plt.title('5000 Test Set Galaxies')
     plt.legend(loc='upper left', prop={'size':16}, labelspacing=0.5)
     plt.savefig(pfnm,bbox_inches='tight')
     if verbose: print('Made '+pfnm)
@@ -286,12 +312,13 @@ def make_plots(verbose, runid):
     filt_colors = ['darkviolet','darkgreen','red','darkorange','brown','black']
     for f in range(6):
         trx = np.where( np.isfinite(train_m[:,f]) )[0]
-        tx = np.random.choice( trx, size=10000, replace=False )
+        tx = np.random.choice( trx, size=5000, replace=False )
         plt.plot( train_m[tx,f], train_me[tx,f], 'o',alpha=0.5,mew=0, \
             color=filt_colors[f],label=filt_names[f])
         del trx,tx
     plt.xlabel('Observed Apparent Magnitude')
     plt.ylabel('Apparent Magnitude Error')
+    plt.title('5000 Training Set Galaxies')
     plt.legend(loc='upper left', prop={'size':16}, labelspacing=0.5)
     plt.savefig(pfnm,bbox_inches='tight')
     if verbose: print('Made '+pfnm)
