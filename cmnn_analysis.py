@@ -248,44 +248,50 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
         print( ' ' )
         print( 'Starting cmnn_analysis.make_stats_plots(), ', datetime.datetime.now() )
 
-    if runid==None:
-        if multi_run_ids==None:
-            print( ' ' )
-            print( 'Error in cmnn_analysis.make_stats_plots()' )
-            print( 'Need to specify input values for at least one of: runid or multi_run_ids.')
-            print( '  runid = ',runid)
-            print( '  multi_run_ids = ',multi_run_ids)
-            print( 'Exit.' )
-            exit()
-
-    ### Check that cmnn_analysis.make_stats_file has been run already
-    if os.path.exists('output/run_'+runid+'/analysis/stats.dat') == False:
+    if (multi_run_ids == None) & (runid == None):
         print( ' ' )
-        print( 'Error, file does not exist: output/run_'+runid+'/analysis/stats.dat')
-        print( 'Need to run cmnn_analysis.make_stats_file() first.')
+        print( 'Error in cmnn_analysis.make_stats_plots()' )
+        print( 'Need to specify input values for at least one of: runid or multi_run_ids.')
+        print( '  runid = ',runid)
+        print( '  multi_run_ids = ',multi_run_ids)
         print( 'Exit.' )
         exit()
-
-    ### Check user input for multiple runs
-    if multi_run_ids == None:
+    if (multi_run_ids == None) & (runid != None):
         del multi_run_ids,multi_run_labels
         multi_run_ids    = [runid]
         multi_run_labels = ['run '+runid]
-    if multi_run_ids != None:
-        if (len(multi_run_ids) != len(multi_run_labels)) | (len(multi_run_ids) > len(multi_run_colors)):
+        del runid
+
+    ### At this point, multi_run_ids is populated, let's make sure it's correct
+    if (len(multi_run_ids) != len(multi_run_labels)):
+        print( ' ' )
+        print( 'Error in cmnn_analysis.make_stats_plots()' )
+        print( 'User-defined input regarding the multiple runs to plot is incompatible.' )
+        print( 'It is required that the lengths of the following arrays be equal:' )
+        print( '  len(multi_run_ids) = ',    len(multi_run_ids) )
+        print( '  len(multi_run_labels) = ', len(multi_run_labels) )
+        print( 'Exit.' )
+        exit()
+    if (len(multi_run_ids) > len(multi_run_colors)):
+        print( ' ' )
+        print( 'Error in cmnn_analysis.make_stats_plots()' )
+        print( 'User-defined input regarding the multiple runs to plot is incompatible.' )
+        print( 'It is required that each run be assigned a unique color.' )
+        print( '  len(multi_run_ids) = ',    len(multi_run_ids) )
+        print( '  len(multi_run_colors) = ', len(multi_run_colors) )
+        print( 'The default list of colors is: ' )
+        print( "  multi_run_colors=['blue','orange','red','green','darkviolet']" )
+        print( 'For example, you might want to pass:' )
+        print( "  multi_run_colors=['blue','orange','red','green','darkviolet','brown','magenta', etc. ]" )
+        print( 'Exit.' )
+        exit()
+    for run_id in multi_run_ids:    
+        if os.path.exists('output/run_'+run_id+'/analysis/stats.dat') == False:
             print( ' ' )
-            print( 'Error in cmnn_analysis.make_stats_plots()' )
-            print( 'User-defined input regarding the multiple runs to plot is incompatible.' )
-            print( 'Values are:' )
-            print( '  len(multi_run_ids) = ', len(multi_run_ids) )
-            print( '  len(multi_run_labels) = ', len(multi_run_labels) )
-            print( '  len(multi_run_colors) = ', len(multi_run_colors) )
-            print( 'But it is required that:' )
-            print( '  len(multi_run_ids) = len(multi_run_labls)' )
-            print( '  len(multi_run_ids) <= len(multi_run_colors)' )
+            print( 'Error, file does not exist: output/run_'+run_id+'/analysis/stats.dat')
+            print( 'Need to run cmnn_analysis.make_stats_file() first.')
             print( 'Exit.' )
             exit()
-    del runid
 
     all_stats_names = np.asarray( [\
         'fout','stdd','bias',\
