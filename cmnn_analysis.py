@@ -28,6 +28,7 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
     ###   fout    : fraction of outliers (see note below)
     ###   stdd    : standard deviation in dzo1pzp of all galaxies in bin
     ###   bias    : mean dzo1pzp of all galaxies in bin
+    ###   outbias : mean dzo1pzp of all outliers in bin
     ###   IQR     : interquartile range of dzo1pzp
     ###   IQRstdd : stdandard deviation from the IQR ( = IQR / 1.349 )
     ###   IQRbias : bias of test galaxies in the IQR 
@@ -39,21 +40,25 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
     ###   fout        : fout
     ###   stdd        : stdd
     ###   bias        : bias
+    ###   outbias     : outlier bias
     ###   IQR         : IQR
     ###   IQRstdd     : IQR stdd (robust standard deviatin)
     ###   IQRbias     : IQR bias (robust bias)
     ###   CORstdd     : post-COR stdd
     ###   CORbias     : post-COR bias
+    ###   CORoutbias  : post-COR outlier bias
     ###   CORIQR      : post-COR IQR
     ###   CORIQRstdd  : post-COR IQR stdd
     ###   CORIQRbias  : post-COR IQR bias
     ###   estdd       : error in stdd
     ###   ebias       : error in bias
+    ###   eoutbias    : error in outlier bias
     ###   eIQR        : error in IQR
     ###   eIQRstdd    : error in IQR stdd
     ###   eIQRbias    : error in IQR bias
     ###   eCORstdd    : error in post-COR stdd
     ###   eCORbias    : error in post-COR bias
+    ###   eCORoutbias : error in post-COR outlier bias
     ###   eCORIQR     : error in post-COR IQR
     ###   eCORIQRstdd : error in post-COR IQR stdd
     ###   eCORIQRbias : error in post-COR IQR bias
@@ -64,6 +69,7 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
 
     ### Calculate the IQRs for all test galaxies with a zphot in the range 0.3 < zphot < 3.0.
     ### Will need this to identify outliers using the SRD's definition of an outlier.
+    ###  fr = FULL RANGE (as in, all galaxies, not just this bin)
     tx         = np.where( ( in_zphot >= float(0.300) ) & ( in_zphot <= float(3.000) ) )[0]
     fr_zspec   = in_zspec[tx]
     fr_zphot   = in_zphot[tx]
@@ -71,6 +77,16 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
     q75, q25   = np.percentile( fr_dzo1pzp, [75 ,25] )
     fr_IQRs    = ( q75 - q25 ) / float(1.349)
     del tx, fr_zphot, fr_zspec, fr_dzo1pzp, q75, q25
+
+    ### Same as above, but for catastrophic outlier rejected set of galaxies
+    tx = np.where( ( in_zphot >= float(0.300) ) & ( in_zphot <= float(3.000) ) & \
+        ( np.abs( in_zphot - in_zspec ) < thresh_COR ) )[0]
+    fr_CORzspec   = in_zspec[tx]
+    fr_CORzphot   = in_zphot[tx]
+    fr_CORdzo1pzp = ( fr_CORzspec - fr_CORzphot ) / ( float(1.0) + fr_CORzphot )
+    q75, q25      = np.percentile( fr_CORdzo1pzp, [75 ,25] )
+    fr_CORIQRs    = ( q75 - q25 ) / float(1.349)
+    del tx, fr_CORzphot, fr_CORzspec, fr_CORdzo1pzp, q75, q25
 
     ### Identify all test galaxies in the requested bin.
     tx    = np.where( ( in_zphot > zlow ) & ( in_zphot <= zhi ) )[0]
@@ -95,9 +111,9 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
     CORdzo1pzp = ( CORzspec - CORzphot ) / ( float(1.0) + CORzphot )
 
     ### Fraction of outliers as defined by the SRD
-    tx   = np.where( ( np.fabs( dzo1pzp ) > float(0.0600) ) & ( np.fabs( dzo1pzp ) > ( float(3.0)*fr_IQRs) ) )[0]
-    fout = float( len( tx ) ) / float( len( dzo1pzp ) )
-    del tx
+    ox   = np.where( ( np.fabs( dzo1pzp ) > float(0.0600) ) & ( np.fabs( dzo1pzp ) > ( float(3.0)*fr_IQRs) ) )[0]
+    fout = float( len( ox ) ) / float( len( dzo1pzp ) )
+    del ox
 
     ### Standard deviation
     stdd    = np.std( dzo1pzp )
@@ -106,6 +122,14 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
     ### Bias
     bias    = np.mean( dzo1pzp )
     CORbias = np.mean( CORdzo1pzp )
+
+    ### Outlier Bias
+    ox = np.where( ( np.fabs( dzo1pzp ) > float(0.0600) ) & ( np.fabs( dzo1pzp ) > ( float(3.0)*fr_IQRs) ) )[0]
+    outbias = np.mean( dzo1pzp[ox] )
+    del ox
+    ox = np.where( ( np.fabs( CORdzo1pzp ) > float(0.0600) ) & ( np.fabs( CORdzo1pzp ) > ( float(3.0)*fr_CORIQRs) ) )[0]
+    CORoutbias = np.mean( CORdzo1pzp[ox] )
+    del ox
 
     ### Intraquartile Range
     q75, q25 = np.percentile( dzo1pzp, [75 ,25] )
@@ -123,14 +147,17 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
     CORIQRbias = np.mean( CORdzo1pzp[tx] )
     del q75, q25, tx
 
+
     ### Now do the MC and calculate errors for all quantities
     vals_s       = np.zeros( Nmc, dtype='float')
     vals_b       = np.zeros( Nmc, dtype='float')
+    vals_ob      = np.zeros( Nmc, dtype='float')
     vals_IQR     = np.zeros( Nmc, dtype='float')
     vals_IQRs    = np.zeros( Nmc, dtype='float')
     vals_IQRb    = np.zeros( Nmc, dtype='float')
     vals_CORs    = np.zeros( Nmc, dtype='float')
     vals_CORb    = np.zeros( Nmc, dtype='float')
+    vals_CORob   = np.zeros( Nmc, dtype='float')
     vals_CORIQR  = np.zeros( Nmc, dtype='float')
     vals_CORIQRs = np.zeros( Nmc, dtype='float')
     vals_CORIQRb = np.zeros( Nmc, dtype='float')
@@ -144,7 +171,13 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
         temp         = dzo1pzp[tx]
         ttx          = np.where( ( temp > q25 ) & ( temp < q75 ) )[0]
         vals_IQRb[i] = np.mean( temp[ttx] )
-        del tx, q75, q25, temp, ttx
+        del q75, q25, temp, ttx
+        tmp_dzo1pzp = dzo1pzp[tx]
+        ox = np.where( ( np.fabs( tmp_dzo1pzp ) > float(0.0600) ) & \
+            ( np.fabs( tmp_dzo1pzp ) > ( float(3.0)*fr_IQRs) ) )[0]
+        vals_ob[i] = np.mean( tmp_dzo1pzp[ox] )
+        del ox, tmp_dzo1pzp
+        del tx
 
         tx = np.random.choice( len(CORdzo1pzp), size=len(CORdzo1pzp), replace=True, p=None )
         vals_CORs[i]    = np.std( CORdzo1pzp[tx] )
@@ -155,27 +188,35 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
         CORtemp         = CORdzo1pzp[tx]
         ttx             = np.where( ( CORtemp > q25 ) & ( CORtemp < q75 ) )[0]
         vals_CORIQRb[i] = np.mean( CORtemp[ttx] )
-        del tx, q75, q25, CORtemp, ttx
+        del q75, q25, CORtemp, ttx
+        tmp_CORdzo1pzp = CORdzo1pzp[tx]
+        ox = np.where( ( np.fabs( tmp_CORdzo1pzp ) > float(0.0600) ) & \
+            ( np.fabs( tmp_CORdzo1pzp ) > ( float(3.0)*fr_CORIQRs) ) )[0]
+        vals_CORob[i] = np.mean( tmp_CORdzo1pzp[ox] )
+        del ox, tmp_CORdzo1pzp
+        del tx
 
     estdd       = np.std( vals_s )
     ebias       = np.std( vals_b )
+    eoutbias    = np.std( vals_ob )
     eIQR        = np.std( vals_IQR )
     eIQRstdd    = np.std( vals_IQRs )
     eIQRbias    = np.std( vals_IQRb )
     eCORstdd    = np.std( vals_CORs )
     eCORbias    = np.std( vals_CORb )
+    eCORoutbias = np.std( vals_CORob )
     eCORIQR     = np.std( vals_CORIQR )
     eCORIQRstdd = np.std( vals_CORIQRs )
     eCORIQRbias = np.std( vals_CORIQRb )
-    del vals_s, vals_b, vals_IQR, vals_IQRs, vals_IQRb
-    del vals_CORs, vals_CORb, vals_CORIQR, vals_CORIQRs, vals_CORIQRb
+    del vals_s, vals_b, vals_ob, vals_IQR, vals_IQRs, vals_IQRb
+    del vals_CORs, vals_CORb, vals_CORob, vals_CORIQR, vals_CORIQRs, vals_CORIQRb
 
     return meanz, CORmeanz, fout, \
-        stdd, bias, IQR, IQRstdd, IQRbias, CORstdd, CORbias, CORIQR, CORIQRstdd, CORIQRbias, \
-        estdd, ebias, eIQR, eIQRstdd, eIQRbias, eCORstdd, eCORbias, eCORIQR, eCORIQRstdd, eCORIQRbias
+        stdd, bias, outbias, IQR, IQRstdd, IQRbias, CORstdd, CORbias, CORoutbias, CORIQR, CORIQRstdd, CORIQRbias, \
+        estdd, ebias, eoutbias, eIQR, eIQRstdd, eIQRbias, eCORstdd, eCORbias, eCORoutbias, eCORIQR, eCORIQRstdd, eCORIQRbias
 
 
-def make_stats_file(  verbose, runid, stats_COR, input_zbins=None ):
+def make_stats_file(  verbose, runid, stats_COR, input_zbins=None, bin_in_truez=False ):
 
     ### Make a file containing the photo-z statistics in zphot bins.
 
@@ -206,31 +247,55 @@ def make_stats_file(  verbose, runid, stats_COR, input_zbins=None ):
         zbins = input_zbins
 
     ### Read in the data
-    fnm = 'output/run_'+runid+'/zphot.cat'
-    ztrue = np.loadtxt( fnm, dtype='float', usecols=(1))
-    zphot = np.loadtxt( fnm, dtype='float', usecols=(2))
+    if bin_in_truez == False:
+        fnm = 'output/run_'+runid+'/zphot.cat'
+        ztrue = np.loadtxt( fnm, dtype='float', usecols=(1))
+        zphot = np.loadtxt( fnm, dtype='float', usecols=(2))
+
+    ### If you want to bin in TRUE z instead of PHOT z,
+    ###  just read the columns into the wrong array.
+    if bin_in_truez == True:
+        fnm = 'output/run_'+runid+'/zphot.cat'
+        ztrue = np.loadtxt( fnm, dtype='float', usecols=(2))
+        zphot = np.loadtxt( fnm, dtype='float', usecols=(1))
 
     ### Open the output file for writing
     ### Then loop over all zbins, obtain the statistical measures, and write them to file
-    ofnm = 'output/run_'+runid+'/analysis/stats.dat'
+    if bin_in_truez == False:
+        ofnm = 'output/run_'+runid+'/analysis/stats.dat'
+    if bin_in_truez == True:
+        ofnm = 'output/run_'+runid+'/analysis/stats_truezbins.dat'
     fout = open(ofnm,'w')
-    fout.write('# zlow zhi meanz CORmeanz fout '+\
-        'stdd bias IQR IQRstdd IQRbias CORstdd CORbias CORIQR CORIQRstdd CORIQRbias '+\
-        'estdd ebias eIQR eIQRstdd eIQRbias eCORstdd eCORbias eCORIQR eCORIQRstdd eCORIQRbias \n')
+    fout.write('# zlow zhi '+\
+        'meanz CORmeanz fout '+\
+        'stdd bias outbias '+\
+        'IQR IQRstdd IQRbias '+\
+        'CORstdd CORbias CORoutbias '+\
+        'CORIQR CORIQRstdd CORIQRbias '+\
+        'estdd ebias eoutbias '+\
+        'eIQR eIQRstdd eIQRbias '+\
+        'eCORstdd eCORbias eCORoutbias '+\
+        'eCORIQR eCORIQRstdd eCORIQRbias \n')
     for z in range(len(zbins)-1):
         stats = get_stats( ztrue, zphot, zbins[z,0], zbins[z,1], stats_COR )
         fout.write('%6.4f %6.4f ' % (zbins[z,0], zbins[z,1]) )
         fout.write('%6.4f %6.4f %6.4f ' % (stats[0], stats[1], stats[2]) )
-        fout.write('%6.4f %6.4f %6.4f %6.4f %6.4f ' % (stats[3], stats[4], stats[5], stats[6], stats[7]) )
-        fout.write('%6.4f %6.4f %6.4f %6.4f %6.4f ' % (stats[8], stats[9], stats[10], stats[11], stats[12]) )
-        fout.write('%6.4f %6.4f %6.4f %6.4f %6.4f ' % (stats[13], stats[14], stats[15], stats[16], stats[17]) )
-        fout.write('%6.4f %6.4f %6.4f %6.4f %6.4f \n' % (stats[18], stats[19], stats[20], stats[21], stats[22]) )
+        fout.write('%6.4f %6.4f %6.4f ' % (stats[3], stats[4], stats[5]) )
+        fout.write('%6.4f %6.4f %6.4f ' % (stats[6], stats[7], stats[8]) )
+        fout.write('%6.4f %6.4f %6.4f ' % (stats[9], stats[10], stats[11]) )
+        fout.write('%6.4f %6.4f %6.4f ' % (stats[12], stats[13], stats[14]) )
+        fout.write('%6.4f %6.4f %6.4f ' % (stats[15], stats[16], stats[17]) )
+        fout.write('%6.4f %6.4f %6.4f ' % (stats[18], stats[19], stats[20]) )
+        fout.write('%6.4f %6.4f %6.4f ' % (stats[21], stats[22], stats[23]) )
+        fout.write('%6.4f %6.4f %6.4f \n' % (stats[24], stats[25], stats[26]) )
+        del stats
     fout.close()
     if verbose: print('Wrote to: ',ofnm)
 
 
 def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, show_binw=True, \
-    multi_run_ids=None, multi_run_labels=None, multi_run_colors=['blue','orange','red','green','darkviolet'] ):
+    multi_run_ids=None, multi_run_labels=None, multi_run_colors=['blue','orange','red','green','darkviolet'],\
+    bin_in_truez=False ):
 
     ### Make plots for all the photo-z statistics for a given run.
 
@@ -243,6 +308,7 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
     ###  multi_run_ids    : array of multiple run ids to co-plot
     ###  multi_run_labels : array of legend labels that describe each run
     ###  multi_run_colors : array of color names to use for each run (five provided as defaults)
+    ###  bin_in_truez     : if True, plot vs. true z (read file stats_truezbins.dat not stats.dat)
 
     if verbose:
         print( ' ' )
@@ -285,27 +351,34 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
         print( "  multi_run_colors=['blue','orange','red','green','darkviolet','brown','magenta', etc. ]" )
         print( 'Exit.' )
         exit()
-    for run_id in multi_run_ids:    
-        if os.path.exists('output/run_'+run_id+'/analysis/stats.dat') == False:
+    for run_id in multi_run_ids:
+        if bin_in_truez == False:
+            fnm = 'output/run_'+run_id+'/analysis/stats.dat'      
+        if bin_in_truez == True:
+            fnm = 'output/run_'+run_id+'/analysis/stats_truezbins.dat'
+        if os.path.exists(fnm) == False:
             print( ' ' )
-            print( 'Error, file does not exist: output/run_'+run_id+'/analysis/stats.dat')
+            print( 'Error, file does not exist: ',fnm)
             print( 'Need to run cmnn_analysis.make_stats_file() first.')
+            if bin_in_truez == True:
+                print( '   and set bin_in_truez == True ')
             print( 'Exit.' )
             exit()
 
     all_stats_names = np.asarray( [\
-        'fout','stdd','bias',\
+        'fout','stdd','bias','outbias',\
         'IQR','IQRstdd','IQRbias',\
-        'CORstdd','CORbias','CORIQR',\
+        'CORstdd','CORbias','CORoutbias','CORIQR',\
         'CORIQRstdd','CORIQRbias'], dtype='str' )
     all_stats_labels = np.asarray( [\
-        'Fraction of Outliers','Standard Deviation','Bias',\
+        'Fraction of Outliers','Standard Deviation','Bias','Outlier Bias',\
         'IQR','Robust Standard Deviation','Robust Bias',\
-        'Standard Deviation (C.O.R.)','Bias (C.O.R)','IQR (C.O.R.)',\
+        'Standard Deviation (C.O.R.)','Bias (C.O.R)','Outlier Bias (C.O.R.)','IQR (C.O.R.)',\
         'Robust Standard Deviation (C.O.R.)','Robust Bias (C.O.R.)'], dtype='str' )
-    all_stats_xcols  = np.asarray( [  2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3], dtype='int' )
-    all_stats_ycols  = np.asarray( [  4, 5, 6, 7, 8, 9,10,11,12,13,14], dtype='int' )
-    all_stats_yecols = np.asarray( [-99,15,16,17,18,19,20,21,22,23,24], dtype='int' )
+    ### stats_xcols is whether to plot vs. meanz (col 2) or CORmeanz (col 3)
+    all_stats_xcols  = np.asarray( [  2, 2, 2, 2,  2, 2, 2,  3, 3, 3, 3,  3, 3], dtype='int' )
+    all_stats_ycols  = np.asarray( [  4, 5, 6, 7,  8, 9,10, 11,12,13,14, 15,16], dtype='int' )
+    all_stats_yecols = np.asarray( [-99,17,18,19, 20,21,22, 23,24,15,26, 27,28], dtype='int' )
 
     ### Populate the stats and names arrays to use when plotting
     if user_stats == None:
@@ -343,10 +416,10 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
             if syc == 4:
                 plt.plot( [0.3,3.0], [0.10,0.10], lw=2, alpha=1, ls='dashed', color='black', label='SRD')
             ### Standard Deviation, 0.02
-            if ( syc == 5 ) | ( syc == 7 ) | ( syc == 8 ) | ( syc == 10 ) | ( syc == 12 ) | ( syc == 13 ) :
+            if ( syc == 5 ) | ( syc == 8 ) | ( syc == 9 ) | ( syc == 11 ) | ( syc == 14 ) | ( syc == 15 ) :
                 plt.plot( [0.3,3.0], [0.02,0.02], lw=2, alpha=1, ls='dashed', color='black', label='SRD')
             ### Bias, +/- 0.003
-            if ( syc == 6 ) | ( syc == 9 ) | ( syc == 11 ) | ( syc == 14 ):
+            if ( syc == 6 ) | ( syc == 10 ) | ( syc == 12 ) | ( syc == 16 ):
                 plt.plot( [0.3,3.0], [-0.003,-0.003], lw=2, alpha=1, ls='dashed', color='black', label='SRD')
                 plt.plot( [0.3,3.0], [0.003,0.003], lw=2, alpha=1, ls='dashed', color='black')
 
@@ -354,7 +427,10 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
         for r,runid in enumerate(multi_run_ids):
             pfnm_suffix += '_'+runid
             ### Read in the statistical measures
-            sfnm = 'output/run_'+runid+'/analysis/stats.dat'
+            if bin_in_truez == False:
+                sfnm = 'output/run_'+runid+'/analysis/stats.dat'
+            if bin_in_truez == True:
+                sfnm = 'output/run_'+runid+'/analysis/stats_truezbins.dat'
             ## If we're showing the bins as horizontal bars
             if show_binw:
                 binlo = np.loadtxt( sfnm, dtype='float', usecols=(0) )
@@ -376,15 +452,24 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
             del sfnm,xvals,yvals
 
         ### Set axis parameters and write plot to file
-        plt.xlabel( 'Photometric Redshift' )
+        if bin_in_truez == False:
+            plt.xlabel( 'Photometric Redshift' )
+        if bin_in_truez == True:
+            plt.xlabel( 'True Redshift' )
         plt.ylabel( stats_labels[s] )
         legend=plt.legend(loc='best',numpoints=1,prop={'size':14},labelspacing=0.15) #,title=lgnd_title)
         # legend.get_title().set_fontsize('14') 
 
         if len(multi_run_ids) == 1:
-            pfnm = 'output/run_'+multi_run_ids[0]+'/analysis/'+stat
+            if bin_in_truez == False:
+                pfnm = 'output/run_'+multi_run_ids[0]+'/analysis/'+stat
+            if bin_in_truez == True:
+                pfnm = 'output/run_'+multi_run_ids[0]+'/analysis/'+stat+'_truezbins'
         if len(multi_run_ids) > 1:
-            pfnm = 'output/stats_plots/'+stat+pfnm_suffix
+            if bin_in_truez == False:
+                pfnm = 'output/stats_plots/'+stat+pfnm_suffix
+            if bin_in_truez == True:
+                pfnm = 'output/stats_plots/'+stat+pfnm_suffix+'_truezbins'
             if os.path.exists('output/stats_plots') == False:
                 os.system('mkdir output/stats_plots')
         plt.savefig( pfnm, bbox_inches='tight') 
@@ -396,18 +481,19 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 def make_tzpz_plot( verbose, runid, \
     polygons_draw=False, polygons_vertices=None, polygons_color='green', \
-    outliers_show=True, outliers_color='red', outliers_label=False):
+    outliers_show=True, outliers_color='red', outliers_label=False, make_pztz=False):
 
     ### Plot of true redshift vs. photometric redshift as a 2d histogram,
     ###  with options to add polygons to define regions and/or show outliers as points.
 
     ### Plotting parameters
-    ###  polygons_draw         =  True/False; if True polygons are drawn
-    ###  polygons_vertices     =  an array of x and y vertices for N polygonse
-    ###  polygons_color        =  line color for polygons
-    ###  outliers_show         =  True/False; if True outliers are shown as points
-    ###  outliers_color        =  point color for outliers
-    ###  outliers_label        =  True/False; if True outliers are labeled in a legend
+    ###  polygons_draw     : True/False; if True polygons are drawn
+    ###  polygons_vertices : an array of x and y vertices for N polygonse
+    ###  polygons_color    : line color for polygons
+    ###  outliers_show     : True/False; if True outliers are shown as points
+    ###  outliers_color    : point color for outliers
+    ###  outliers_label    : True/False; if True outliers are labeled in a legend
+    ###  make_pztz         : swap axes and plot y=PHOT vs x=TRUE redshift
 
     if verbose:
         print(' ')
@@ -439,8 +525,12 @@ def make_tzpz_plot( verbose, runid, \
 
     ### Include all test galaxies with a measured zphot in the 2d histogram
     tx = np.where( zphot > 0.0 )[0]
-    plt.hist2d( zphot[tx], ztrue[tx], bins=100, range=[[0.0,3.0],[0.0,3.0]], norm=LogNorm(clip=True), \
-        cmin=1, cmap='Greys')
+    if make_pztz == False:
+        plt.hist2d( zphot[tx], ztrue[tx], bins=100, range=[[0.0,3.0],[0.0,3.0]], norm=LogNorm(clip=True), \
+            cmin=1, cmap='Greys')
+    if make_pztz == True:
+        plt.hist2d( ztrue[tx], zphot[tx], bins=100, range=[[0.0,3.0],[0.0,3.0]], norm=LogNorm(clip=True), \
+            cmin=1, cmap='Greys')
     del tx
 
     ### Overplot the outliers as points
@@ -454,23 +544,38 @@ def make_tzpz_plot( verbose, runid, \
         threesigma = float(3.0) * sigma
         ox = np.where( ( np.fabs( tmp_dz ) > float(0.0600) ) & ( np.fabs( tmp_dz ) > threesigma ) )[0]
         if outliers_label:
-            plt.plot( tmp_zphot[ox], tmp_ztrue[ox], 'o', ms=2, alpha=0.4, color=outliers_color, \
-                markeredgewidth=0, label='outlier')
+            if make_pztz == False:
+                plt.plot( tmp_zphot[ox], tmp_ztrue[ox], 'o', ms=2, alpha=0.4, color=outliers_color, \
+                    markeredgewidth=0, label='outlier')
+            if make_pztz == True:
+                plt.plot( tmp_ztrue[ox], tmp_zphot[ox], 'o', ms=2, alpha=0.4, color=outliers_color, \
+                    markeredgewidth=0, label='outlier')
         else:
-            plt.plot( tmp_zphot[ox], tmp_ztrue[ox], 'o', ms=2, alpha=0.4, color=outliers_color, \
-                markeredgewidth=0)
+            if make_pztz == False:
+                plt.plot( tmp_zphot[ox], tmp_ztrue[ox], 'o', ms=2, alpha=0.4, color=outliers_color, \
+                    markeredgewidth=0)
+            if make_pztz == True:
+                plt.plot( tmp_ztrue[ox], tmp_zphot[ox], 'o', ms=2, alpha=0.4, color=outliers_color, \
+                    markeredgewidth=0)
         del tmp_x, tmp_ztrue, tmp_zphot, tmp_dz
         del q75, q25, sigma, threesigma, ox
 
     ### Set axis parameters and write plot to file
-    plt.xlabel('Photometric Redshift')
-    plt.ylabel('True Redshift')
+    if make_pztz == False:
+        plt.xlabel('Photometric Redshift')
+        plt.ylabel('True Redshift')
+    if make_pztz == True:
+        plt.xlabel('True Redshift')
+        plt.ylabel('Photometric Redshift')
     plt.xlim([0.0,3.0])
     plt.ylim([0.0,3.0])
     if outliers_label:
         plt.legend( loc='upper center', numpoints=1, markerscale=3, prop={'size':16}, labelspacing=0.5)
 
-    ofnm = 'output/run_'+runid+'/analysis/tzpz'
+    if make_pztz == False:
+        ofnm = 'output/run_'+runid+'/analysis/tzpz'
+    if make_pztz == True:
+        ofnm = 'output/run_'+runid+'/analysis/pztz'
     plt.savefig(ofnm,bbox_inches='tight')
     if verbose: print('Wrote to: ',ofnm)
 
