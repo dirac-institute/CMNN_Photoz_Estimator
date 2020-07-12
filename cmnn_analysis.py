@@ -38,6 +38,7 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
     ###   meanz       : meanz
     ###   CORmeanz    : post-COR, the meanz
     ###   fout        : fout
+    ###   CORfout     : post-COR fout
     ###   stdd        : stdd
     ###   bias        : bias
     ###   outbias     : outlier bias
@@ -113,6 +114,11 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
     ### Fraction of outliers as defined by the SRD
     ox   = np.where( ( np.fabs( dzo1pzp ) > float(0.0600) ) & ( np.fabs( dzo1pzp ) > ( float(3.0)*fr_IQRs) ) )[0]
     fout = float( len( ox ) ) / float( len( dzo1pzp ) )
+    del ox
+
+    ### Fraction of post-COR outliers; use same definition as fout and the SRD
+    ox   = np.where( ( np.fabs( CORdzo1pzp ) > float(0.0600) ) & ( np.fabs( CORdzo1pzp ) > ( float(3.0)*fr_IQRs) ) )[0]
+    CORfout = float( len( ox ) ) / float( len( CORdzo1pzp ) )
     del ox
 
     ### Standard deviation
@@ -211,18 +217,20 @@ def get_stats( in_zspec, in_zphot, zlow, zhi, thresh_COR ):
     del vals_s, vals_b, vals_ob, vals_IQR, vals_IQRs, vals_IQRb
     del vals_CORs, vals_CORb, vals_CORob, vals_CORIQR, vals_CORIQRs, vals_CORIQRb
 
-    return meanz, CORmeanz, fout, \
+    return meanz, CORmeanz, fout, CORfout, \
         stdd, bias, outbias, IQR, IQRstdd, IQRbias, CORstdd, CORbias, CORoutbias, CORIQR, CORIQRstdd, CORIQRbias, \
         estdd, ebias, eoutbias, eIQR, eIQRstdd, eIQRbias, eCORstdd, eCORbias, eCORoutbias, eCORIQR, eCORIQRstdd, eCORIQRbias
 
 
-def make_stats_file(  verbose, runid, stats_COR, input_zbins=None, bin_in_truez=False ):
+def make_stats_file(  verbose, runid, stats_COR, input_zbins=[None], statsfile_suffix=None, bin_in_truez=False ):
 
     ### Make a file containing the photo-z statistics in zphot bins.
 
     ### Input definitions 
-    ###   thresh_COR  : zspec-zphot threshold to define "catastrophic outlier rejection"
-    ###   input_zbins : an array of redshift bin centers [ [zlow_1,zhi_1], [zlow_2,zhi_2], ... [zlow_N,zhi_N] ]
+    ###   stats_COR    : zspec-zphot threshold to define "catastrophic outlier rejection"
+    ###   input_zbins  : an array of redshift bin centers [ [zlow_1,zhi_1], [zlow_2,zhi_2], ... [zlow_N,zhi_N] ]
+    ###   file_suffix  : an optional suffix to the output file to, e.g., denote user-supplied input bins 
+    ###   bin_in_truez : the bins are in true redshift (otherwise, default is to bin in photo-z)
 
     if verbose:
         print(' ')
@@ -232,7 +240,9 @@ def make_stats_file(  verbose, runid, stats_COR, input_zbins=None, bin_in_truez=
         os.system('mkdir output/run_'+runid+'/analysis')
 
     ### Setup the redshift bins, the default is overlapping bins
-    if input_zbins == None:
+    user_zbins = np.asarray( input_zbins, dtype='float' )
+    ### If input_zbins == None, create the zbins
+    if np.isnan(user_zbins).all():
         temp = []
         zlow = float(0.00)
         zhi  = float(0.30)
@@ -243,8 +253,11 @@ def make_stats_file(  verbose, runid, stats_COR, input_zbins=None, bin_in_truez=
             temp.append( [zlow,zhi] )
         zbins = np.asarray( temp, dtype='float' )
         del temp,zlow,zhi
+    ### If input_zbins != None, use the passed zbins
     else:
-        zbins = input_zbins
+        zbins = user_zbins
+    if verbose:
+        print('zbins = ',zbins)
 
     ### Read in the data
     if bin_in_truez == False:
@@ -263,11 +276,15 @@ def make_stats_file(  verbose, runid, stats_COR, input_zbins=None, bin_in_truez=
     ### Then loop over all zbins, obtain the statistical measures, and write them to file
     if bin_in_truez == False:
         ofnm = 'output/run_'+runid+'/analysis/stats.dat'
+        if statsfile_suffix != None:
+            ofnm = 'output/run_'+runid+'/analysis/stats_'+statsfile_suffix+'.dat'
     if bin_in_truez == True:
         ofnm = 'output/run_'+runid+'/analysis/stats_truezbins.dat'
+        if statsfile_suffix != None:
+            ofnm = 'output/run_'+runid+'/analysis/stats_'+statsfile_suffix+'_truezbins.dat'
     fout = open(ofnm,'w')
     fout.write('# zlow zhi '+\
-        'meanz CORmeanz fout '+\
+        'meanz CORmeanz fout CORfout '+\
         'stdd bias outbias '+\
         'IQR IQRstdd IQRbias '+\
         'CORstdd CORbias CORoutbias '+\
@@ -276,39 +293,35 @@ def make_stats_file(  verbose, runid, stats_COR, input_zbins=None, bin_in_truez=
         'eIQR eIQRstdd eIQRbias '+\
         'eCORstdd eCORbias eCORoutbias '+\
         'eCORIQR eCORIQRstdd eCORIQRbias \n')
-    for z in range(len(zbins)-1):
+    for z in range(len(zbins)):
         stats = get_stats( ztrue, zphot, zbins[z,0], zbins[z,1], stats_COR )
         fout.write('%6.4f %6.4f ' % (zbins[z,0], zbins[z,1]) )
-        fout.write('%6.4f %6.4f %6.4f ' % (stats[0], stats[1], stats[2]) )
-        fout.write('%6.4f %6.4f %6.4f ' % (stats[3], stats[4], stats[5]) )
-        fout.write('%6.4f %6.4f %6.4f ' % (stats[6], stats[7], stats[8]) )
-        fout.write('%6.4f %6.4f %6.4f ' % (stats[9], stats[10], stats[11]) )
-        fout.write('%6.4f %6.4f %6.4f ' % (stats[12], stats[13], stats[14]) )
-        fout.write('%6.4f %6.4f %6.4f ' % (stats[15], stats[16], stats[17]) )
-        fout.write('%6.4f %6.4f %6.4f ' % (stats[18], stats[19], stats[20]) )
-        fout.write('%6.4f %6.4f %6.4f ' % (stats[21], stats[22], stats[23]) )
-        fout.write('%6.4f %6.4f %6.4f \n' % (stats[24], stats[25], stats[26]) )
+        for s in range(28):
+            fout.write( '%6.4f ' % stats[s] )
+        fout.write( '\n' )
         del stats
     fout.close()
     if verbose: print('Wrote to: ',ofnm)
 
 
-def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, show_binw=True, \
-    multi_run_ids=None, multi_run_labels=None, multi_run_colors=['blue','orange','red','green','darkviolet'],\
-    bin_in_truez=False ):
+def make_stats_plots( verbose=True, runid=None, user_stats=['fout','CORIQRstdd','CORIQRbias'], \
+    statsfile_suffix=None, bin_in_truez=False,\
+    show_SRD=True, show_binw=True, \
+    multi_run_ids=None, multi_run_labels=None, multi_run_colors=['blue','orange','red','green','darkviolet']):
 
     ### Make plots for all the photo-z statistics for a given run.
 
     ### Input definitions 
     ###  verbose          : extra output to screen
     ###  runid            : the run to make plots for (ignored if multi_run_ids != None)
-    ###  user_stats       : array listing which stats to create plots for, default is:
-    ###                     ['fout','CORIQRstdd','CORIQRbias']
+    ###  user_stats       : array listing which stats to create plots for, default is ['fout','CORIQRstdd','CORIQRbias']
+    ###  statsfile_suffix : if not None, read file "stats_[suffix].dat" and add suffix to output plot names
+    ###  bin_in_truez     : if True, plot vs. true z (read file "stats_truezbins.dat" not "stats.dat")
     ###  show_SRD         : True/False; if True, the SRD target values are shown as dashed horizontal lines
+    ###  show_binw        : True/False; if True, the bin widths are shown as light horizontal bars
     ###  multi_run_ids    : array of multiple run ids to co-plot
     ###  multi_run_labels : array of legend labels that describe each run
     ###  multi_run_colors : array of color names to use for each run (five provided as defaults)
-    ###  bin_in_truez     : if True, plot vs. true z (read file stats_truezbins.dat not stats.dat)
 
     if verbose:
         print( ' ' )
@@ -347,40 +360,56 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
         print( '  len(multi_run_colors) = ', len(multi_run_colors) )
         print( 'The default list of colors is: ' )
         print( "  multi_run_colors=['blue','orange','red','green','darkviolet']" )
-        print( 'For example, you might want to pass:' )
-        print( "  multi_run_colors=['blue','orange','red','green','darkviolet','brown','magenta', etc. ]" )
+        print( 'For example, if you have 7 runs to compare, you might want to pass:' )
+        print( "  multi_run_colors=['blue','orange','red','green','darkviolet','brown','magenta']" )
         print( 'Exit.' )
         exit()
     for run_id in multi_run_ids:
         if bin_in_truez == False:
-            fnm = 'output/run_'+run_id+'/analysis/stats.dat'      
+            stats_fnm = 'output/run_'+run_id+'/analysis/stats.dat'
+            if statsfile_suffix != None:
+                stats_fnm = 'output/run_'+run_id+'/analysis/stats_'+statsfile_suffix+'.dat'
         if bin_in_truez == True:
-            fnm = 'output/run_'+run_id+'/analysis/stats_truezbins.dat'
-        if os.path.exists(fnm) == False:
+            stats_fnm = 'output/run_'+run_id+'/analysis/stats_truezbins.dat'
+            if statsfile_suffix != None:
+                stats_fnm = 'output/run_'+run_id+'/analysis/stats_'+statsfile_suffix+'_truezbins.dat'
+        if os.path.exists(stats_fnm) == False:
             print( ' ' )
-            print( 'Error, file does not exist: ',fnm)
+            print( 'Error, file does not exist: ',stats_fnm)
             print( 'Need to run cmnn_analysis.make_stats_file() first.')
             if bin_in_truez == True:
                 print( '   and set bin_in_truez == True ')
             print( 'Exit.' )
             exit()
+        del stats_fnm
 
+    ### Define needed parameters for ALL the possible statistical measures
+    ###  (but only the statistics specified in user_stats will have plots made)
     all_stats_names = np.asarray( [\
-        'fout','stdd','bias','outbias',\
+        'fout','CORfout',\
+        'stdd','bias','outbias',\
         'IQR','IQRstdd','IQRbias',\
-        'CORstdd','CORbias','CORoutbias','CORIQR',\
-        'CORIQRstdd','CORIQRbias'], dtype='str' )
+        'CORstdd','CORbias','CORoutbias',\
+        'CORIQR','CORIQRstdd','CORIQRbias'], dtype='str' )
     all_stats_labels = np.asarray( [\
-        'Fraction of Outliers','Standard Deviation','Bias','Outlier Bias',\
+        'Fraction of Outliers','(C.O.R.) Fraction of Outliers',\
+        'Standard Deviation','Bias','Outlier Bias',\
         'IQR','Robust Standard Deviation','Robust Bias',\
-        'Standard Deviation (C.O.R.)','Bias (C.O.R)','Outlier Bias (C.O.R.)','IQR (C.O.R.)',\
-        'Robust Standard Deviation (C.O.R.)','Robust Bias (C.O.R.)'], dtype='str' )
+        'Standard Deviation (C.O.R.)','Bias (C.O.R)','Outlier Bias (C.O.R.)',\
+        'IQR (C.O.R.)','Robust Standard Deviation (C.O.R.)','Robust Bias (C.O.R.)'], dtype='str' )
     ### stats_xcols is whether to plot vs. meanz (col 2) or CORmeanz (col 3)
-    all_stats_xcols  = np.asarray( [  2, 2, 2, 2,  2, 2, 2,  3, 3, 3, 3,  3, 3], dtype='int' )
-    all_stats_ycols  = np.asarray( [  4, 5, 6, 7,  8, 9,10, 11,12,13,14, 15,16], dtype='int' )
-    all_stats_yecols = np.asarray( [-99,17,18,19, 20,21,22, 23,24,15,26, 27,28], dtype='int' )
+    all_stats_xcols  = np.asarray( [  2,  3,  2, 2, 2,  2, 2, 2,  3, 3, 3,  3, 3, 3], dtype='int' )
+    all_stats_ycols  = np.asarray( [  4,  5,  6, 7, 8,  9,10,11, 12,13,14, 15,16,17], dtype='int' )
+    all_stats_yecols = np.asarray( [-99,-99, 17,18,19, 20,21,22, 23,24,15, 26,27,28], dtype='int' )
 
-    ### Populate the stats and names arrays to use when plotting
+    ### to co-plot the SRD target values, need to know the type of statistic
+    ###   -1 : no corresponding SRD target value (i.e., for outbias)
+    ###    0 : a measure of the fraction of outliers
+    ###    1 : a standard deviation measure
+    ###    2 : a bias measure
+    all_stats_srdtyp = np.asarray( [  0,  0,  1, 2, -1,  1, 1, 2,  1, 2,-1,  1, 1, 2])
+
+    ### Match the input user_stats to the arrays of information fo plotting all the types of statistcs
     if user_stats == None:
         user_stats = ['fout','CORIQRstdd','CORIQRbias']
     x = []
@@ -388,14 +417,18 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
         tx = np.where( stat == all_stats_names )[0]
         if len(tx) == 1:
             x.append(tx[0])
+        if verbose:
+            if len(tx) == 0:
+                print('WARNING: Unrecognized element in user_stats: ',stat,' no such plot will be made.')
         del tx
     sx = np.asarray( x, dtype='int' )
     del x
     stats_names  = all_stats_names[sx]
     stats_labels = all_stats_labels[sx]
-    stats_xcols   = all_stats_xcols[sx]
-    stats_ycols   = all_stats_ycols[sx]
-    stats_yecols  = all_stats_yecols[sx]
+    stats_xcols  = all_stats_xcols[sx]
+    stats_ycols  = all_stats_ycols[sx]
+    stats_yecols = all_stats_yecols[sx]
+    stats_srdtyp = all_stats_srdtyp[sx]
     del sx,user_stats
     del all_stats_names,all_stats_labels,all_stats_xcols,all_stats_ycols,all_stats_yecols
 
@@ -413,13 +446,13 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
         ### Show the SRD target values, if desired
         if show_SRD == True:
             ### Fraction of Outliers, 10%
-            if syc == 4:
+            if stats_srdtyp[s] == 0:
                 plt.plot( [0.3,3.0], [0.10,0.10], lw=2, alpha=1, ls='dashed', color='black', label='SRD')
             ### Standard Deviation, 0.02
-            if ( syc == 5 ) | ( syc == 8 ) | ( syc == 9 ) | ( syc == 11 ) | ( syc == 14 ) | ( syc == 15 ) :
+            if stats_srdtyp[s] == 1:
                 plt.plot( [0.3,3.0], [0.02,0.02], lw=2, alpha=1, ls='dashed', color='black', label='SRD')
             ### Bias, +/- 0.003
-            if ( syc == 6 ) | ( syc == 10 ) | ( syc == 12 ) | ( syc == 16 ):
+            if stats_srdtyp[s] == 2:
                 plt.plot( [0.3,3.0], [-0.003,-0.003], lw=2, alpha=1, ls='dashed', color='black', label='SRD')
                 plt.plot( [0.3,3.0], [0.003,0.003], lw=2, alpha=1, ls='dashed', color='black')
 
@@ -428,17 +461,21 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
             pfnm_suffix += '_'+runid
             ### Read in the statistical measures
             if bin_in_truez == False:
-                sfnm = 'output/run_'+runid+'/analysis/stats.dat'
+                stats_fnm = 'output/run_'+run_id+'/analysis/stats.dat'
+                if statsfile_suffix != None:
+                    stats_fnm = 'output/run_'+run_id+'/analysis/stats_'+statsfile_suffix+'.dat'
             if bin_in_truez == True:
-                sfnm = 'output/run_'+runid+'/analysis/stats_truezbins.dat'
+                stats_fnm = 'output/run_'+run_id+'/analysis/stats_truezbins.dat'
+                if statsfile_suffix != None:
+                    stats_fnm = 'output/run_'+run_id+'/analysis/stats_'+statsfile_suffix+'_truezbins.dat'
             ## If we're showing the bins as horizontal bars
             if show_binw:
-                binlo = np.loadtxt( sfnm, dtype='float', usecols=(0) )
-                binhi = np.loadtxt( sfnm, dtype='float', usecols=(1) )
-            xvals = np.loadtxt( sfnm, dtype='float', usecols=(sxc) )
-            yvals = np.loadtxt( sfnm, dtype='float', usecols=(syc) )
+                binlo = np.loadtxt( stats_fnm, dtype='float', usecols=(0) )
+                binhi = np.loadtxt( stats_fnm, dtype='float', usecols=(1) )
+            xvals = np.loadtxt( stats_fnm, dtype='float', usecols=(sxc) )
+            yvals = np.loadtxt( stats_fnm, dtype='float', usecols=(syc) )
             if stats_yecols[s] > 0:
-                eyvals = np.loadtxt( sfnm, dtype='float', usecols=(stats_yecols[s]) )
+                eyvals = np.loadtxt( stats_fnm, dtype='float', usecols=(stats_yecols[s]) )
             ### Plot the values, with error bars if appropriate
             plt.plot( xvals, yvals, lw=3, alpha=0.75, color=multi_run_colors[r], label=multi_run_labels[r] )
             ## If we're showing the bins as horizontal bars
@@ -449,7 +486,7 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
             if stats_yecols[s] > 0:
                 plt.errorbar( xvals, yvals, yerr=eyvals, fmt='none', elinewidth=3, capsize=3, capthick=3, ecolor=multi_run_colors[r] )
                 del eyvals
-            del sfnm,xvals,yvals
+            del stats_fnm,xvals,yvals
 
         ### Set axis parameters and write plot to file
         if bin_in_truez == False:
@@ -463,15 +500,24 @@ def make_stats_plots( verbose=True, runid=None, user_stats=None, show_SRD=True, 
         if len(multi_run_ids) == 1:
             if bin_in_truez == False:
                 pfnm = 'output/run_'+multi_run_ids[0]+'/analysis/'+stat
+                if statsfile_suffix != None:
+                    pfnm = 'output/run_'+multi_run_ids[0]+'/analysis/'+stat+'_'+statsfile_suffix
             if bin_in_truez == True:
                 pfnm = 'output/run_'+multi_run_ids[0]+'/analysis/'+stat+'_truezbins'
+                if statsfile_suffix != None:
+                    pfnm = 'output/run_'+multi_run_ids[0]+'/analysis/'+stat+'_'+statsfile_suffix+'_truezbins'
         if len(multi_run_ids) > 1:
             if bin_in_truez == False:
                 pfnm = 'output/stats_plots/'+stat+pfnm_suffix
+                if statsfile_suffix != None:
+                    pfnm = 'output/stats_plots/'+stat+'_'+statsfile_suffix+pfnm_suffix
             if bin_in_truez == True:
-                pfnm = 'output/stats_plots/'+stat+pfnm_suffix+'_truezbins'
+                pfnm = 'output/stats_plots/'+stat+'_truezbins'+pfnm_suffix
+                if statsfile_suffix != None:
+                    pfnm = 'output/stats_plots/'+stat+'_'+statsfile_suffix+'_truezbins'+pfnm_suffix
             if os.path.exists('output/stats_plots') == False:
                 os.system('mkdir output/stats_plots')
+
         plt.savefig( pfnm, bbox_inches='tight') 
 
         if verbose: print('Created: ',pfnm)
