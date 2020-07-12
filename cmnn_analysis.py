@@ -340,6 +340,9 @@ def make_stats_plots( verbose=True, runid=None, user_stats=['fout','CORIQRstdd',
         multi_run_ids    = [runid]
         multi_run_labels = ['run '+runid]
         del runid
+    if verbose:
+        print('run ids: ', multi_run_ids)
+        print('run labels: ', multi_run_labels )
 
     ### At this point, multi_run_ids is populated, let's make sure it's correct
     if (len(multi_run_ids) != len(multi_run_labels)):
@@ -457,8 +460,8 @@ def make_stats_plots( verbose=True, runid=None, user_stats=['fout','CORIQRstdd',
                 plt.plot( [0.3,3.0], [0.003,0.003], lw=2, alpha=1, ls='dashed', color='black')
 
         pfnm_suffix = ''
-        for r,runid in enumerate(multi_run_ids):
-            pfnm_suffix += '_'+runid
+        for r,run_id in enumerate(multi_run_ids):
+            pfnm_suffix += '_'+run_id
             ### Read in the statistical measures
             if bin_in_truez == False:
                 stats_fnm = 'output/run_'+run_id+'/analysis/stats.dat'
