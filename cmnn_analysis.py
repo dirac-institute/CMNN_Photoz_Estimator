@@ -652,11 +652,11 @@ def make_hist_plots( verbose, runid ):
     pfnm = 'output/run_'+runid+'/analysis/hist_z'
     fig = plt.figure(figsize=(8,8))
     plt.rcParams.update({'font.size':20})
-    plt.hist( ztrain, normed=True,bins=100,histtype='step',ls='solid',\
+    plt.hist( ztrain, density=True,bins=100,histtype='step',ls='solid',\
             lw=2,alpha=0.5,color='grey',label='train z')
-    plt.hist( ztrue, normed=True,bins=100,histtype='step',ls='solid',\
+    plt.hist( ztrue, density=True,bins=100,histtype='step',ls='solid',\
             lw=2,alpha=0.7,color='blue',label='test z true')
-    plt.hist( zphot, normed=True,bins=100,histtype='step',ls='solid',\
+    plt.hist( zphot, density=True,bins=100,histtype='step',ls='solid',\
             lw=2,alpha=0.7,color='red',label='test photo-z')
     plt.xlabel('Redshift')
     plt.ylabel('Fraction of Galaxies')
