@@ -232,9 +232,9 @@ def make_plots(verbose, runid):
     pfnm = 'output/run_'+runid+'/plot_cats/hist_ztrue'
     fig  = plt.figure(figsize=(10,7))
     plt.rcParams.update({'font.size':20})
-    plt.hist( test_tz,  normed=True,bins=30,histtype='step',ls='solid',lw=2,alpha=1,  \
+    plt.hist( test_tz,  density=True,bins=30,histtype='step',ls='solid',lw=2,alpha=1,  \
         color='black',label='test')
-    plt.hist( train_tz, normed=True,bins=30,histtype='step',ls='solid',lw=4,alpha=0.5,\
+    plt.hist( train_tz, density=True,bins=30,histtype='step',ls='solid',lw=4,alpha=0.5,\
         color='black',label='train')
     plt.xlabel('True Catalog Redshift')
     plt.ylabel('Fraction of Galaxies')
@@ -250,11 +250,11 @@ def make_plots(verbose, runid):
     filt_colors = ['darkviolet','darkgreen','red','darkorange','brown','black']
     for f in range(6):
         tex = np.where( np.isfinite(test_m[:,f]) )[0]
-        plt.hist( test_m[tex,f], normed=True,cumulative=True,bins=30,histtype='step',ls='solid',\
+        plt.hist( test_m[tex,f], density=True,cumulative=True,bins=30,histtype='step',ls='solid',\
             lw=2,alpha=1,  \
             color=filt_colors[f],label='test '+filt_names[f])
         trx = np.where( np.isfinite(train_m[:,f]) )[0]
-        plt.hist( train_m[trx,f], normed=True,cumulative=True,bins=30,histtype='step',ls='solid',\
+        plt.hist( train_m[trx,f], density=True,cumulative=True,bins=30,histtype='step',ls='solid',\
             lw=4,alpha=0.5,  \
             color=filt_colors[f],label='train '+filt_names[f])
         del tex,trx
@@ -273,10 +273,10 @@ def make_plots(verbose, runid):
     filt_colors = ['darkviolet','darkgreen','red','darkorange','brown','black']
     for f in range(6):
         tex = np.where( np.isfinite(test_m[:,f]) )[0]
-        plt.hist( test_me[tex,f], normed=True,bins=mebins,histtype='step',ls='solid',\
+        plt.hist( test_me[tex,f], density=True,bins=mebins,histtype='step',ls='solid',\
             lw=2,alpha=1,color=filt_colors[f],label='test '+filt_names[f])
         trx = np.where( np.isfinite(train_m[:,f]) )[0]
-        plt.hist( train_me[trx,f], normed=True,bins=mebins,histtype='step',ls='solid',\
+        plt.hist( train_me[trx,f], density=True,bins=mebins,histtype='step',ls='solid',\
             lw=4,alpha=0.5,color=filt_colors[f],label='train '+filt_names[f])
         del tex,trx
     plt.xlabel('Apparent Magnitude Error')
