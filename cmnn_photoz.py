@@ -75,7 +75,7 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
                 rval = np.random.choice( tx, size=1, replace=False )[0]
             Photoz      = train_z[index[rval]]
             PhotozError = np.std( train_z[index] )
-            del tx,rval,rival
+            del tx,rval
 
         ### weight by how good the color match is and then choose randomly
         if selection_mode == 2:
