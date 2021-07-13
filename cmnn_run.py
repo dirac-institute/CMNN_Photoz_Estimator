@@ -106,6 +106,12 @@ if __name__ == '__main__':
     parser.add_argument('--train_mcut', nargs='+', action='store', dest='user_train_mcut', type=float,\
         help='train-set mag det cuts u g r i z y', default=[26.100, 27.400, 27.500, 25.000, 26.100, 24.900])
 
+    ### Argument:    ignoremcutmax, type bool 1, default False
+    ### Description: if True, ignore the mcut max restrictions
+    ### Example:     python cmnn_run.py --ignoremcutmax True
+    parser.add_argument('--ignoremcutmax', action='store', dest='user_ignoremcutmax', type=str2bool, \
+        help='ignore the the mcut max restrictions', default=False, choices=[True,False])
+    
     ### Argument:    force_idet, type bool 1, default True
     ### Description: force detection in i-band for all test and train galaxies
     ### Example:     python cmnn_run.py --force_idet False
@@ -231,11 +237,11 @@ if __name__ == '__main__':
             message += '  train_m5: filter, value, min, max = %s %6.3f %6.3f %6.3f \n' % \
             (filters[f],args.user_train_m5[f],m5_min[f],m5_max[f])
             mfail = True
-        if (args.user_test_mcut[f] < mcut_min[f]) | (args.user_test_mcut[f] > mcut_max[f]):
+        if (args.user_ignoremcutmax == False) | (args.user_test_mcut[f] < mcut_min[f]) | (args.user_test_mcut[f] > mcut_max[f]):
             message += '  test_mcut: filter, value, min, max = %s %6.3f %6.3f %6.3f \n' % \
             (filters[f],args.user_test_mcut[f],mcut_min[f],mcut_max[f])
             mfail = True
-        if (args.user_train_mcut[f] < mcut_min[f]) | (args.user_train_mcut[f] > mcut_max[f]):
+        if (args.user_ignoremcutmax == False) | (args.user_train_mcut[f] < mcut_min[f]) | (args.user_train_mcut[f] > mcut_max[f]):
             message += '  train_mcut: filter, value, min, max = %s %6.3f %6.3f %6.3f \n' % \
             (filters[f],args.user_train_mcut[f],mcut_min[f],mcut_max[f])
             mfail = True
