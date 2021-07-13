@@ -237,11 +237,11 @@ if __name__ == '__main__':
             message += '  train_m5: filter, value, min, max = %s %6.3f %6.3f %6.3f \n' % \
             (filters[f],args.user_train_m5[f],m5_min[f],m5_max[f])
             mfail = True
-        if (args.user_ignoremcutmax == False) | (args.user_test_mcut[f] < mcut_min[f]) | (args.user_test_mcut[f] > mcut_max[f]):
+        if (args.user_ignoremcutmax == False) & ((args.user_test_mcut[f] < mcut_min[f]) | (args.user_test_mcut[f] > mcut_max[f])):
             message += '  test_mcut: filter, value, min, max = %s %6.3f %6.3f %6.3f \n' % \
             (filters[f],args.user_test_mcut[f],mcut_min[f],mcut_max[f])
             mfail = True
-        if (args.user_ignoremcutmax == False) | (args.user_train_mcut[f] < mcut_min[f]) | (args.user_train_mcut[f] > mcut_max[f]):
+        if (args.user_ignoremcutmax == False) & ((args.user_train_mcut[f] < mcut_min[f]) | (args.user_train_mcut[f] > mcut_max[f])):
             message += '  train_mcut: filter, value, min, max = %s %6.3f %6.3f %6.3f \n' % \
             (filters[f],args.user_train_mcut[f],mcut_min[f],mcut_max[f])
             mfail = True
@@ -303,6 +303,7 @@ if __name__ == '__main__':
         print( '%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f' % \
             ('train_mcut',args.user_train_mcut[0],args.user_train_mcut[1],args.user_train_mcut[2],\
                 args.user_train_mcut[3],args.user_train_mcut[4],args.user_train_mcut[5]) )
+        print( '%-11s %r' % ('ignoremcutmax',args.user_ignoremcutmax) 
         print( '%-11s %r' % ('force_idet',args.user_force_idet) )
         print( '%-11s %r' % ('force_gridet',args.user_force_gridet) )
         print( '%-11s %i' % ('test_N',args.user_test_N) )
@@ -331,6 +332,7 @@ if __name__ == '__main__':
     fout.write( '%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
         ('train_mcut',args.user_train_mcut[0],args.user_train_mcut[1],args.user_train_mcut[2],\
             args.user_train_mcut[3],args.user_train_mcut[4],args.user_train_mcut[5]) )
+    fout.write( '%-11s %r\n' % ('ignoremcutmax',args.user_ignoremcutmax) )
     fout.write( '%-11s %r \n' % ('force_idet',args.user_force_idet) )
     fout.write( '%-11s %r \n' % ('force_gridet',args.user_force_gridet) )
     fout.write( '%-11s %i \n' % ('test_N',args.user_test_N) )
