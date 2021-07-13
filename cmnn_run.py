@@ -303,7 +303,7 @@ if __name__ == '__main__':
         print( '%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f' % \
             ('train_mcut',args.user_train_mcut[0],args.user_train_mcut[1],args.user_train_mcut[2],\
                 args.user_train_mcut[3],args.user_train_mcut[4],args.user_train_mcut[5]) )
-        print( '%-11s %r' % ('ignoremcutmax',args.user_ignoremcutmax) 
+        print( '%-11s %r' % ('ignoremcutmax',args.user_ignoremcutmax) )
         print( '%-11s %r' % ('force_idet',args.user_force_idet) )
         print( '%-11s %r' % ('force_gridet',args.user_force_gridet) )
         print( '%-11s %i' % ('test_N',args.user_test_N) )
