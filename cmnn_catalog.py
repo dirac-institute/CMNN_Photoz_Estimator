@@ -11,8 +11,8 @@ import datetime
 
 
 def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, force_gridet, \
-    test_N, train_N, cmnn_minNc):
-
+    test_N, train_N, cmnn_minNc, user_catalog):
+    
     if verbose:
         print(' ')
         print('Starting cmnn_catalog.make_test_and_train(), ',datetime.datetime.now())
@@ -56,22 +56,22 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
     ### # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
     ### Check if the gzip needs unzipping
-    if (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat' ) == False) & \
-       (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat.gz' ) == True):
-        os.system('gunzip LSST_galaxy_catalog_i25p3.dat.gz')
+    if (os.path.isfile(user_catalog) == False) & \
+       (os.path.isfile(user_catalog) == True):
+        os.system(user_catalog)
 
-    if (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat' ) == False) & \
-       (os.path.isfile( 'LSST_galaxy_catalog_i25p3.dat.gz' ) == False):
+    if (os.path.isfile(user_catalog) == False) & \
+       (os.path.isfile(user_catalog) == False):
         print('Error. Mock galaxy catalog file is missing or misnamed.')
         print('Required to have one of the following:')
-        print('  LSST_galaxy_catalog_i25p3.dat')
+        print(user_catalog)
         print('  LSST_galaxy_catalog_i25p3.dat.gz')
         print('Exit (missing input file).')
         exit()
 
-    all_id = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols=(0))
-    all_tz = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols=(1))
-    all_tm = np.loadtxt( 'LSST_galaxy_catalog_i25p3.dat', dtype='float', usecols=(2,3,4,5,6,7))
+    all_id = np.loadtxt(user_catalog, dtype='float', usecols=(0))
+    all_tz = np.loadtxt(user_catalog, dtype='float', usecols=(1))
+    all_tm = np.loadtxt(user_catalog, dtype='float', usecols=(2,3,4,5,6,7))
 
     ### Ensure needed quantities are in numpy arrays
     gamma = np.asarray( [0.037,0.038,0.039,0.039,0.04,0.04], dtype='float' )
