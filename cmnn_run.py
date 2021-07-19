@@ -190,6 +190,13 @@ if __name__ == '__main__':
         help='Stats: define catastrophic outliers rejected (COR) from stddev and bias', default=1.5)
 
     args = parser.parse_args()
+    
+    #Checks that user_catalog exists for analysis
+    if (os.path.isfile(args.user_catalog) == False):
+        print('Error. Mock galaxy catalog file is missing or misnamed:')
+        print(args.user_catalog)
+        print('Exit (missing input file).')
+        exit()
 
     ### Clobber output if desired (clear output directory)
     if os.path.exists('output/run_'+args.user_runid):
@@ -198,7 +205,7 @@ if __name__ == '__main__':
             os.system('rm -rf output/run_'+args.user_runid)
         else:
             print('Error. Output file already exists : ','output/run_'+args.user_runid)
-            print(' To overwrite, use --clobber_runid True')
+            print(' To overwrite, use --clobber True')
             print('Exit (bad runid).')
             exit()
 
