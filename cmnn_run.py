@@ -20,7 +20,7 @@ def str2bool(v):
 
 
 def run(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, force_gridet, test_N, train_N, \
-    cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, cmnn_ppmag, cmnn_ppclr, stats_COR):
+    cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, cmnn_ppmag, cmnn_ppclr, stats_COR, catalog):
 
     ### Run each of the three components of the CMNN Estimator in turn:
     ###  1. Create test and training set catalogs and make plots.
@@ -33,7 +33,7 @@ def run(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, fo
     os.system("echo 'Start cmnn_catalog.make_test_and_train(): "+str(datetime.datetime.now())+\
         "' >> output/run_"+args.user_runid+"/timestamps.dat")
     cmnn_catalog.make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, \
-        force_idet, force_gridet, test_N, train_N, cmnn_minNc)
+        force_idet, force_gridet, test_N, train_N, cmnn_minNc, catalog)
     cmnn_catalog.make_plots(verbose, runid)
 
     ### 2. Estimate photometric redshifts
@@ -62,6 +62,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Allow for passing of arguments.')
 
     ### Define all allowed user input
+
+
+
+    ### This argument allows the user to control which catalog data he or she can
+    ### can use.
+    parser.add_argument('--catalog', action='store', dest='user_catalog', type=str, \
+        help='user-specified galaxy catalog with full path', default='LSST_galaxy_catalog_i25p3.dat')
+
 
     ### Argument:    verbose, type bool, default value False
     ### Description: if True, prints more intermediate information to the screen
@@ -182,6 +190,13 @@ if __name__ == '__main__':
         help='Stats: define catastrophic outliers rejected (COR) from stddev and bias', default=1.5)
 
     args = parser.parse_args()
+    
+    #Checks that user_catalog exists for analysis
+    if (os.path.isfile(args.user_catalog) == False):
+        print('Error. Mock galaxy catalog file is missing or misnamed:')
+        print(args.user_catalog)
+        print('Exit (missing input file).')
+        exit()
 
     ### Clobber output if desired (clear output directory)
     if os.path.exists('output/run_'+args.user_runid):
@@ -190,7 +205,7 @@ if __name__ == '__main__':
             os.system('rm -rf output/run_'+args.user_runid)
         else:
             print('Error. Output file already exists : ','output/run_'+args.user_runid)
-            print(' To overwrite, use --clobber_runid True')
+            print(' To overwrite, use --clobber True')
             print('Exit (bad runid).')
             exit()
 
@@ -315,6 +330,7 @@ if __name__ == '__main__':
         print( '%-11s %r' % ('cmnn_ppmag',args.user_cmnn_ppmag) )
         print( '%-11s %r' % ('cmnn_ppclr',args.user_cmnn_ppclr) )
         print( '%-11s %4.2f' % ('stats_COR',args.user_stats_COR) )
+        print( '%-11s %s' % ('catalog',args.user_catalog) )
 
     ### Record user inputs to file.
     fout = open('output/run_'+args.user_runid+'/inputs.txt','w')
@@ -344,6 +360,7 @@ if __name__ == '__main__':
     fout.write( '%-11s %r \n' % ('cmnn_ppmag',args.user_cmnn_ppmag) )
     fout.write( '%-11s %r \n' % ('cmnn_ppclr',args.user_cmnn_ppclr) )
     fout.write( '%-11s %4.2f \n' % ('stats_COR',args.user_stats_COR) )
+    fout.write( '%-11s %s \n' % ('catalog',args.user_catalog) )
     fout.close()
     if args.user_verbose: print('Wrote user inputs to output/run_'+args.user_runid+'/inputs.txt')
 
@@ -356,6 +373,6 @@ if __name__ == '__main__':
         args.user_test_N, args.user_train_N, \
         args.user_cmnn_minNc, args.user_cmnn_minNN, args.user_cmnn_ppf, args.user_cmnn_rsel, \
         args.user_cmnn_ppmag, args.user_cmnn_ppclr, \
-        args.user_stats_COR )
+        args.user_stats_COR, args.user_catalog)
     if args.user_verbose: print('Finished cmnn_run.run: ', datetime.datetime.now())
 
