@@ -28,18 +28,18 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
             if verbose: print('Speed things up using awk to pre-select useful galaxies from big data file.')
             imagmax = np.max( [ test_mcut[3], train_mcut[3] ] ) + 0.5
             strimagmax = str(np.round(imagmax,2))
-            if verbose: print("awk '{if ($5<"+strimagmax+") print $0}' "+ user_catalog + " > temp.dat")
-            os.system("awk '{if ($5<"+strimagmax+") print $0}' " + user_catalog +" > temp.dat")
-            all_id = np.loadtxt( 'temp.dat', dtype='float', usecols=(0))
-            all_tz = np.loadtxt( 'temp.dat', dtype='float', usecols=(1))
-            all_tm = np.loadtxt( 'temp.dat', dtype='float', usecols=(2,3,4,5,6,7))
-            if verbose: print('rm temp.dat')
-            os.system('rm temp.dat')
+            if verbose: print("awk '{if ($5<"+strimagmax+") print $0}' "+ user_catalog + " > " + "temp_" + runid + ".dat")
+            os.system("awk '{if ($5<"+strimagmax+") print $0}' " + user_catalog +" > " + "temp_" + runid + ".dat")
+            all_id = np.loadtxt( "temp_" + runid + ".dat", dtype='float', usecols=(0))
+            all_tz = np.loadtxt( "temp_" + runid + ".dat", dtype='float', usecols=(1))
+            all_tm = np.loadtxt( "temp_" + runid + ".dat", dtype='float', usecols=(2,3,4,5,6,7))
+            if verbose: print("rm " + "temp_" + runid + ".dat")
+            os.system("rm " + "temp_" + runid + ".dat")
         else:
             ### Otherwise just have to read the whole thing
-            all_id = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols=(0))
-            all_tz = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols=(1))
-            all_tm = np.loadtxt( 'LSST_galaxy_catalog_full.dat', dtype='float', usecols=(2,3,4,5,6,7))
+            all_id = np.loadtxt( user_catalog, dtype='float', usecols=(0))
+            all_tz = np.loadtxt( user_catalog, dtype='float', usecols=(1))
+            all_tm = np.loadtxt( user_catalog, dtype='float', usecols=(2,3,4,5,6,7))
     else:
         ### Otherwise just have to read the whole thing
         all_id = np.loadtxt(user_catalog, dtype='float', usecols=(0))
