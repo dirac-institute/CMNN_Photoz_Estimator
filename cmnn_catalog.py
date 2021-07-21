@@ -33,7 +33,7 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
             all_id = np.loadtxt( "temp_" + runid + ".dat", dtype='float', usecols=(0))
             all_tz = np.loadtxt( "temp_" + runid + ".dat", dtype='float', usecols=(1))
             all_tm = np.loadtxt( "temp_" + runid + ".dat", dtype='float', usecols=(2,3,4,5,6,7))
-            if verbose: print('rm ' + "temp_" + runid + ".dat")
+            if verbose: print("rm " + "temp_" + runid + ".dat")
             os.system("rm " + "temp_" + runid + ".dat")
         else:
             ### Otherwise just have to read the whole thing
