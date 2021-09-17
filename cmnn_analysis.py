@@ -307,7 +307,7 @@ def make_stats_file(  verbose, runid, stats_COR, input_zbins=[None], statsfile_s
 def make_stats_plots( verbose=True, runid=None, user_stats=['fout','CORIQRstdd','CORIQRbias'], \
     statsfile_suffix=None, bin_in_truez=False,\
     show_SRD=True, show_binw=True, \
-    multi_run_ids=None, multi_run_labels=None, multi_run_colors=['blue','orange','red','green','darkviolet']):
+    multi_run_ids=None, multi_run_labels=None, multi_run_colors=['blue','orange','red','green','darkviolet'],plot_title = ''):
 
     ### Make plots for all the photo-z statistics for a given run.
 
@@ -521,6 +521,9 @@ def make_stats_plots( verbose=True, runid=None, user_stats=['fout','CORIQRstdd',
             if os.path.exists('output/stats_plots') == False:
                 os.system('mkdir output/stats_plots')
 
+        if plot_title != '':
+            plt.title(plot_title)                                 
+
         plt.savefig( pfnm, bbox_inches='tight') 
 
         if verbose: print('Created: ',pfnm)
@@ -530,7 +533,7 @@ def make_stats_plots( verbose=True, runid=None, user_stats=['fout','CORIQRstdd',
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 def make_tzpz_plot( verbose, runid, \
     polygons_draw=False, polygons_vertices=None, polygons_color='green', \
-    outliers_show=True, outliers_color='red', outliers_label=False, make_pztz=False):
+    outliers_show=True, outliers_color='red', outliers_label=False, make_pztz=False, plot_title = ''):
 
     ### Plot of true redshift vs. photometric redshift as a 2d histogram,
     ###  with options to add polygons to define regions and/or show outliers as points.
@@ -625,6 +628,10 @@ def make_tzpz_plot( verbose, runid, \
         ofnm = 'output/run_'+runid+'/analysis/tzpz'
     if make_pztz == True:
         ofnm = 'output/run_'+runid+'/analysis/pztz'
+        
+    if plot_title != '':
+        plt.title(plot_title)                 
+        
     plt.savefig(ofnm,bbox_inches='tight')
     if verbose: print('Wrote to: ',ofnm)
 
