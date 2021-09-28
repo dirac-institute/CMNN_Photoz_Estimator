@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import chi2
 import datetime
+import os
 
 ### Estimate photometric redshifts for test set galaxies.
 ### All inputs to make_zphot are described in cmnn_run.py.
@@ -153,7 +154,7 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
 
 
 def make_zphot(verbose, runid, force_idet, force_gridet, cmnn_minNc, cmnn_minNN, cmnn_ppf, \
-    cmnn_rsel, cmnn_ppmag, cmnn_ppclr):
+    cmnn_rsel, cmnn_ppmag, cmnn_ppclr, test_cat=None, train_cat=None):
 
     if verbose:
         print(' ')
@@ -177,19 +178,32 @@ def make_zphot(verbose, runid, force_idet, force_gridet, cmnn_minNc, cmnn_minNN,
 
     ### Not all columns need to be read in
     if verbose: print('Reading test and train catalogs in output/run_'+runid+'/')
-    all_test_id = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='int', usecols=(0) )
-    all_test_tz = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(1) )
-    all_test_m  = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(2,4,6,8,10,12) )
-    # all_test_me = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(3,5,7,9,11,13) )
-    all_test_c  = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(14,16,18,20,22) )
-    all_test_ce = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(15,17,19,21,23) )
+    
+    output_dir = f'output/run_{runid}/'
+    os.makedirs(output_dir, exist_ok=True)
 
-    all_train_id = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='int', usecols=(0) )
-    all_train_tz = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(1) )
-    all_train_m  = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(2,4,6,8,10,12) )
-    # all_train_me = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(3,5,7,9,11,13) )
-    all_train_c  = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(14,16,18,20,22) )
-    # all_train_ce = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(15,17,19,21,23) )
+    test_cat_path = f'{output_dir}/test.cat'
+    train_cat_path = f'{output_dir}/train.cat'
+
+    if test_cat:
+        test_cat_path = test_cat
+
+    if train_cat:
+        train_cat_path = train_cat
+
+    all_test_id = np.loadtxt( test_cat_path, dtype='int', usecols=(0) )
+    all_test_tz = np.loadtxt( test_cat_path, dtype='float', usecols=(1) )
+    all_test_m  = np.loadtxt( test_cat_path, dtype='float', usecols=(2,4,6,8,10,12) )
+    # all_test_me = np.loadtxt( test_cat_path, dtype='float', usecols=(3,5,7,9,11,13) )
+    all_test_c  = np.loadtxt( test_cat_path, dtype='float', usecols=(14,16,18,20,22) )
+    all_test_ce = np.loadtxt( test_cat_path, dtype='float', usecols=(15,17,19,21,23) )
+
+    all_train_id = np.loadtxt( train_cat_path, dtype='int', usecols=(0) )
+    all_train_tz = np.loadtxt( train_cat_path, dtype='float', usecols=(1) )
+    all_train_m  = np.loadtxt( train_cat_path, dtype='float', usecols=(2,4,6,8,10,12) )
+    # all_train_me = np.loadtxt( train_cat_path, dtype='float', usecols=(3,5,7,9,11,13) )
+    all_train_c  = np.loadtxt( train_cat_path, dtype='float', usecols=(14,16,18,20,22) )
+    # all_train_ce = np.loadtxt( train_cat_path, dtype='float', usecols=(15,17,19,21,23) )
 
     if verbose:
         print('Test set array lengths.')
@@ -312,3 +326,27 @@ def make_zphot(verbose, runid, force_idet, force_gridet, cmnn_minNc, cmnn_minNN,
     fout.close()
 
     if verbose: print('Wrote to: output/run_'+runid+'/zphot.cat')
+
+
+if __name__ == '__main__':
+    verbose = True
+    runid = '02'
+    force_idet = True
+    force_gridet = True
+    cmnn_minNc = 3
+    cmnn_minNN = 10
+    cmnn_ppf = 0.680
+    cmnn_rsel = 2
+    cmnn_ppmag = False
+    cmnn_ppclr = True
+    test_cat = None
+    train_cat = None
+
+    make_zphot(
+        verbose, runid, force_idet, force_gridet,
+        cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel,
+        cmnn_ppmag, cmnn_ppclr, test_cat, train_cat
+    )
+
+
+
