@@ -11,8 +11,8 @@ import datetime
 
 
 def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut, force_idet, force_gridet, \
-    test_N, train_N, cmnn_minNc, user_catalog):
-    
+    test_N, train_N, cmnn_minNc, user_catalog, seed=None):
+
     if verbose:
         print(' ')
         print('Starting cmnn_catalog.make_test_and_train(), ',datetime.datetime.now())
@@ -46,8 +46,8 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
         all_tz = np.loadtxt(user_catalog, dtype='float', usecols=(1))
         all_tm = np.loadtxt(user_catalog, dtype='float', usecols=(2,3,4,5,6,7))
 
- 
- 
+
+
     ### # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     ### Ensure needed quantities are in numpy arrays
     gamma = np.asarray( [0.037,0.038,0.039,0.039,0.04,0.04], dtype='float' )
@@ -55,6 +55,9 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
     np_train_m5   = np.asarray( train_m5, dtype='float' )
     np_test_mcut  = np.asarray( test_mcut, dtype='float' )
     np_train_mcut = np.asarray( train_mcut, dtype='float' )
+
+    ### Set up numpy RandomState object for reproducitbility
+    rand_state = np.random.RandomState(seed=seed)
 
     ### Calculate the magnitude errors based on the m5 depths
     if verbose: print('Calculating magnitude errors.')
@@ -72,8 +75,8 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
 
     ### Calculate observed apparent magnitudes based on the errors
     if verbose: print('Calculating observed apparent magnitudes.')
-    all_test_m = all_tm + all_test_me * np.random.normal( size = (len(all_tm),6) )
-    all_train_m = all_tm + all_train_me * np.random.normal( size = (len(all_tm),6) )
+    all_test_m = all_tm + all_test_me * rand_state.normal( size = (len(all_tm),6) )
+    all_train_m = all_tm + all_train_me * rand_state.normal( size = (len(all_tm),6) )
 
     ### Do not allow tm < 18, the approximate saturation point
     for f in range(6):
@@ -152,7 +155,7 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
 
         ### Create test.cat
         if verbose: print('Opening and writing to ','output/run_'+runid+'/test.cat')
-        te_rx = np.random.choice( te_x, size=test_N, replace=False )
+        te_rx = rand_state.choice( te_x, size=test_N, replace=False )
         test_fout = open('output/run_'+runid+'/test.cat','w')
         for i in te_rx:
             test_fout.write(' %10i %10.8f ' % (all_id[i],all_tz[i]) )
@@ -166,7 +169,7 @@ def make_test_and_train(verbose, runid, test_m5, train_m5, test_mcut, train_mcut
 
         ### Create train.cat
         if verbose: print('Opening and writing to ','output/run_'+runid+'/train.cat')
-        tr_rx = np.random.choice( tr_x, size=train_N, replace=False )
+        tr_rx = rand_state.choice( tr_x, size=train_N, replace=False )
         train_fout = open('output/run_'+runid+'/train.cat','w')
         for i in tr_rx:
             train_fout.write(' %10i %10.8f ' % (all_id[i],all_tz[i]) )
@@ -188,7 +191,7 @@ def make_plots(verbose, runid):
     if verbose:
         print(' ')
         print('Starting cmnn_catalog.make_plots(), ',datetime.datetime.now())
-    
+
     if verbose: print('Reading test and train catalogs in output/run_'+runid+'/')
 
     if os.path.isdir('output/run_'+runid+'/plot_cats') == False :
@@ -270,7 +273,7 @@ def make_plots(verbose, runid):
     filt_colors = ['darkviolet','darkgreen','red','darkorange','brown','black']
     for f in range(6):
         tex = np.where( np.isfinite(test_m[:,f]) )[0]
-        tx = np.random.choice( tex, size=5000, replace=False )
+        tx = rand_state.choice( tex, size=5000, replace=False )
         plt.plot( test_m[tx,f], test_me[tx,f], 'o',alpha=0.5,mew=0, \
             color=filt_colors[f],label=filt_names[f])
         del tex,tx
@@ -288,7 +291,7 @@ def make_plots(verbose, runid):
     filt_colors = ['darkviolet','darkgreen','red','darkorange','brown','black']
     for f in range(6):
         trx = np.where( np.isfinite(train_m[:,f]) )[0]
-        tx = np.random.choice( trx, size=5000, replace=False )
+        tx = rand_state.choice( trx, size=5000, replace=False )
         plt.plot( train_m[tx,f], train_me[tx,f], 'o',alpha=0.5,mew=0, \
             color=filt_colors[f],label=filt_names[f])
         del trx,tx
