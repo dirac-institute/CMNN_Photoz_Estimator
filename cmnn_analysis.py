@@ -533,7 +533,7 @@ def make_stats_plots( verbose=True, runid=None, user_stats=['fout','CORIQRstdd',
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 def make_tzpz_plot( verbose, runid, \
     polygons_draw=False, polygons_vertices=None, polygons_color='green', \
-    outliers_show=True, outliers_color='red', outliers_label=False, make_pztz=False, plot_title = ''):
+    outliers_show=True, outliers_color='red', outliers_label=False, make_pztz=False, plot_title=''):
 
     ### Plot of true redshift vs. photometric redshift as a 2d histogram,
     ###  with options to add polygons to define regions and/or show outliers as points.
@@ -624,21 +624,17 @@ def make_tzpz_plot( verbose, runid, \
     if outliers_label:
         plt.legend( loc='upper center', numpoints=1, markerscale=3, prop={'size':16}, labelspacing=0.5)
 
-    if make_pztz == False:
-        ofnm = 'output/run_'+runid+'/analysis/tzpz'
-    if make_pztz == True:
-        ofnm = 'output/run_'+runid+'/analysis/pztz'
-        
-    if plot_title != '':
-        plt.title(plot_title)                 
-        
+    if make_pztz == False: ofnm = 'output/run_'+runid+'/analysis/tzpz'
+    if make_pztz == True: ofnm = 'output/run_'+runid+'/analysis/pztz'
+
+    if plot_title != '': plt.title(plot_title)
     plt.savefig(ofnm,bbox_inches='tight')
     if verbose: print('Wrote to: ',ofnm)
 
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-def make_hist_plots( verbose, runid ):
+def make_hist_plots( verbose, runid, train_cat=None ):
 
     if verbose:
         print(' ')
@@ -653,7 +649,10 @@ def make_hist_plots( verbose, runid ):
     zphot  = np.loadtxt( fnm, dtype='float', usecols=(2))
     Ncm    = np.loadtxt( fnm, dtype='float', usecols=(4))
     Ntrain = np.loadtxt( fnm, dtype='float', usecols=(5))
-    ztrain = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(1))
+
+    if not train_cat: train_cat = 'output/run_'+runid+'/train.cat'
+
+    ztrain = np.loadtxt( train_cat, dtype='float', usecols=(1))
 
     ### Histogram of redshifts: test true, test photoz, train z
     pfnm = 'output/run_'+runid+'/analysis/hist_z'

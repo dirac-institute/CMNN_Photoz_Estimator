@@ -178,18 +178,16 @@ def make_zphot(verbose, runid, force_idet, force_gridet, cmnn_minNc, cmnn_minNN,
 
     ### Not all columns need to be read in
     if verbose: print('Reading test and train catalogs in output/run_'+runid+'/')
-    
+
     output_dir = f'output/run_{runid}/'
     os.makedirs(output_dir, exist_ok=True)
 
     test_cat_path = f'{output_dir}/test.cat'
     train_cat_path = f'{output_dir}/train.cat'
 
-    if test_cat:
-        test_cat_path = test_cat
+    if test_cat: test_cat_path = test_cat
 
-    if train_cat:
-        train_cat_path = train_cat
+    if train_cat: train_cat_path = train_cat
 
     all_test_id = np.loadtxt( test_cat_path, dtype='int', usecols=(0) )
     all_test_tz = np.loadtxt( test_cat_path, dtype='float', usecols=(1) )
@@ -236,9 +234,12 @@ def make_zphot(verbose, runid, force_idet, force_gridet, cmnn_minNc, cmnn_minNN,
         ppmag_fractions = np.asarray( range(len(ppmag_sorted_train_imags)), dtype='float') /\
         float(len(ppmag_sorted_train_imags))
 
+    phzout = 'output/run_'+runid+'/zphot.cat'
+
     ### Open file for the photo-z and print a header line
-    if verbose: print('Starting to create list of photo-z: output/run_'+runid+'/zphot.cat')
-    fout = open('output/run_'+runid+'/zphot.cat','w')
+    fout = open(phzout, 'w')
+    if verbose: print(f'Starting to create list of photo-z: {phzout}')
+
     fout.write('# cmnn_minNc=%3i cmnn_minNN=%3i cmnn_ppf=%4.2f cmnn_rsel=%i cmnn_ppmag=%r cmnn_ppclr=%r \n' % \
         (cmnn_minNc,cmnn_minNN,cmnn_ppf,cmnn_rsel,cmnn_ppmag,cmnn_ppclr))
 
@@ -325,7 +326,7 @@ def make_zphot(verbose, runid, force_idet, force_gridet, cmnn_minNc, cmnn_minNN,
 
     fout.close()
 
-    if verbose: print('Wrote to: output/run_'+runid+'/zphot.cat')
+    if verbose: print(f'Wrote to: {phzout}')
 
 
 if __name__ == '__main__':
