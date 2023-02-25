@@ -6,7 +6,7 @@ import cmnn_photoz
 import cmnn_analysis
 import cmnn_tools
 
-def run(verbose, runid, filtmask, catalog, \
+def run(verbose, runid, filtmask, yfilt, catalog, \
         test_m5, train_m5, test_mcut, train_mcut, \
         force_idet, force_gridet, test_N, train_N, \
         cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, \
@@ -20,10 +20,10 @@ def run(verbose, runid, filtmask, catalog, \
     tmp_str = str(datetime.datetime.now())
     os.system("echo 'start cmnn_catalog: "+tmp_str+"' >> "+tmp_fnm)
 
-    cmnn_catalog.make_test_and_train(verbose, runid, filtmask, \
+    cmnn_catalog.make_test_and_train(verbose, runid, filtmask, yfilt, catalog, \
                                      test_m5, train_m5, test_mcut, train_mcut, \
                                      force_idet, force_gridet, test_N, train_N, \
-                                     cmnn_minNc, catalog)
+                                     cmnn_minNc)
     cmnn_catalog.make_plots(verbose, runid)
 
     tmp_str = str(datetime.datetime.now())
@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--catalog', action='store', dest='user_catalog', type=str, \
                         help='user-specified galaxy catalog with full path', \
-                        default='Euclid-SDSS.txt')
+                        default='mock_catalog.dat')
     
     parser.add_argument('--verbose', action='store', dest='user_verbose', type=str2bool, \
                         help='print optional information to the screen', default=True)
@@ -223,8 +223,8 @@ if __name__ == '__main__':
         print('  test_N : %i \n' % args.user_test_N)
         fail = True
 
-    if (args.user_train_N < 50000) | (args.user_train_N > 1000000):
-        print('Error. Input value for train_N must be between 50000 and 1000000.')
+    if (args.user_train_N < 50000) | (args.user_train_N > 200000):
+        print('Error. Input value for train_N must be between 50000 and 200000.')
         print('  train_N : %i \n' % args.user_train_N)
         fail = True
 
@@ -252,6 +252,7 @@ if __name__ == '__main__':
     fout.write('%-11s %s \n' % ('catalog', args.user_catalog))
     fout.write('%-11s %r \n' % ('clobber', args.user_clobber))
     fout.write('%-11s %s \n' % ('runid', args.user_runid))
+    fout.write('%-11s %1i \n' % ('yfilt', args.user_yfilt))
     fout.write('%-11s %1i %1i %1i %1i %1i %1i %1i %1i %1i \n' % \
                ('filtmask',\
                 args.user_filtmask[0], args.user_filtmask[1], args.user_filtmask[2],\
@@ -301,7 +302,7 @@ if __name__ == '__main__':
         print('Starting cmnn_run.run: ', datetime.datetime.now())
     del tmp_path
         
-    run(args.user_verbose, args.user_runid, args.user_filtmask, args.user_catalog, \
+    run(args.user_verbose, args.user_runid, args.user_filtmask, args.user_yfilt, args.user_catalog, \
         args.user_test_m5, args.user_train_m5, args.user_test_mcut, args.user_train_mcut, \
         args.user_force_idet, args.user_force_gridet, args.user_test_N, args.user_train_N, \
         args.user_cmnn_minNc, args.user_cmnn_minNN, args.user_cmnn_ppf, args.user_cmnn_rsel, \
