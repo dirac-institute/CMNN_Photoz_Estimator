@@ -3,35 +3,46 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 
-def make_test_and_train(verbose, runid, filtmask, yfilt, catalog, roman_spec, 
+def make_test_and_train(verbose, runid, filtmask, yfilt, catalog, roman_exp, 
                         test_m5, train_m5, test_mcut, train_mcut, 
                         force_idet, force_gridet, test_N, train_N, cmnn_minNc):
     
+    '''
+    Create the test and training set based on user specifications.
+    
+    Inputs described in cmnn_run.main.
+    
+    Outputs: output/run_<runid>/test.cat and train.cat
+    '''
+    
     if verbose:
         print('Starting cmnn_catalog.make_test_and_train: ',datetime.datetime.now())
-
+        
+    # read galaxy data from the catalog
+    # recall use of the yfilt parameter is
+    #   yfilt = 0 : use PanSTARRs y-band (default, column 7)
+    #   yfilt = 1 : use Euclid y-band (column 8)
     all_id = np.loadtxt(catalog, dtype='float', usecols=(0))
     all_tz = np.loadtxt(catalog, dtype='float', usecols=(1))
-    
-    # yfilt = 0 : use PanSTARRs y-band (default, column 7)
-    # yfilt = 1 : use Euclid y-band (column 8)
     if yfilt == 0:
-        all_tm = np.loadtxt(catalog, dtype='float', usecols=(2,3,4,5,6,7,9,10,11))
+        all_tm = np.loadtxt(catalog, dtype='float', usecols=(2, 3, 4, 5, 6, 7, 9, 10, 11))
     elif yfilt == 1:
-        all_tm = np.loadtxt(catalog, dtype='float', usecols=(2,3,4,5,6,8,9,10,11))
+        all_tm = np.loadtxt(catalog, dtype='float', usecols=(2, 3, 4, 5, 6, 8, 9, 10, 11))
         
+    # convert user-specified magnitude limits to numpy arrays
+    np_test_m5    = np.asarray(test_m5, dtype='float')
+    np_train_m5   = np.asarray(train_m5, dtype='float')
+    np_test_mcut  = np.asarray(test_mcut, dtype='float')
+    np_train_mcut = np.asarray(train_mcut, dtype='float')
+
     # gamma sets the impact of sky brightness in magnitude error estimates
-    gamma = np.asarray( [0.037,0.038,0.039,0.039,0.04,0.04,0.04,0.04,0.04], dtype='float' )
-
-    np_test_m5    = np.asarray( test_m5, dtype='float' )
-    np_train_m5   = np.asarray( train_m5, dtype='float' )
-    np_test_mcut  = np.asarray( test_mcut, dtype='float' )
-    np_train_mcut = np.asarray( train_mcut, dtype='float' )
-
-    all_test_me = np.sqrt((0.04 - gamma) * (np.power(10.0, 0.4*(all_tm[:]-np_test_m5))) + \
-                          gamma * (np.power(10.0, 0.4*(all_tm[:]-np_test_m5))**2))
-    all_train_me = np.sqrt((0.04 - gamma) * (np.power(10.0, 0.4*(all_tm[:]-np_train_m5))) + \
-                           gamma * (np.power(10.0, 0.4*(all_tm[:]-np_train_m5))**2))
+    gamma = np.asarray( [0.037, 0.038, 0.039, 0.039, 0.04, 0.04, 0.04, 0.04, 0.04], dtype='float' )
+    
+    # apply user-specified m5 depths to calculate magnitude errors for all galaxies
+    all_test_me = np.sqrt((0.04 - gamma) * (np.power(10.0, 0.4 * (all_tm[:] - np_test_m5))) + \
+                          gamma * (np.power(10.0, 0.4*(all_tm[:] - np_test_m5))**2))
+    all_train_me = np.sqrt((0.04 - gamma) * (np.power(10.0, 0.4 * (all_tm[:] - np_train_m5))) + \
+                           gamma * (np.power(10.0, 0.4 * (all_tm[:] - np_train_m5))**2))
     
     # apply the uncertainty floor of 0.005 mag
     for f in range(9):
@@ -44,7 +55,7 @@ def make_test_and_train(verbose, runid, filtmask, yfilt, catalog, roman_spec,
     all_test_m = all_tm + all_test_me * np.random.normal(size=(len(all_tm), 9))
     all_train_m = all_tm + all_train_me * np.random.normal(size=(len(all_tm), 9))
     
-    # apply 17 mag as the saturation limit
+    # apply 17 mag as the saturation limit for all filters
     for f in range(9):
         tx = np.where(all_tm[:,f] < 17.0000)[0]
         all_test_me[tx] = np.nan
@@ -53,7 +64,7 @@ def make_test_and_train(verbose, runid, filtmask, yfilt, catalog, roman_spec,
         all_train_m[tx] = np.nan
         del tx
 
-    # do not allow an "upscattering" of > 0.2 mag
+    # do not allow "upscattering" of > 0.2 mag
     for f in range(9):
         tx = np.where(all_tm[:,f] > np_test_m5[f] + 0.20)[0]
         all_test_me[tx] = np.nan
@@ -64,7 +75,7 @@ def make_test_and_train(verbose, runid, filtmask, yfilt, catalog, roman_spec,
         all_train_m[tx] = np.nan
         del tx
 
-    # apply magnitude cuts
+    # apply the user-specified magnitude cuts
     for f in range(9):
         te_x = np.where(all_test_m[:,f] > np_test_mcut[f])[0]
         if len(te_x) > 0:
@@ -88,23 +99,39 @@ def make_test_and_train(verbose, runid, filtmask, yfilt, catalog, roman_spec,
                 all_train_me[tr_x, :] = np.nan
         del te_x,tr_x
     
-    # roman special runs
-    # fifth color is 0:z-y, 1:z-J, 2:z-H, 3:z-K
-    if roman_spec == 1:
+    # Roman special experiements
+    #   0 : fifth color is z-y; do nothing
+    #   1 : fifth color is z-J; put J into y
+    #   2 : fifth color is z-H; put H into y
+    #   3 : fifth color is z-K; put K into y
+    #   4 : sixth color is y-J; do nothing
+    #   5 : sixth color is y-H; put H into J
+    #   6 : sixth color is y-K; put K into J
+    if roman_exp == 1:
         all_test_m[:, 5] = all_test_m[:, 6]
         all_test_me[:, 5] = all_test_me[:, 6]
         all_train_m[:, 5] = all_train_m[:, 6]
         all_train_me[:, 5] = all_train_me[:, 6]
-    if roman_spec == 2:
+    if roman_exp == 2:
         all_test_m[:, 5] = all_test_m[:, 7]
         all_test_me[:, 5] = all_test_me[:, 7]
         all_train_m[:, 5] = all_train_m[:, 7]
         all_train_me[:, 5] = all_train_me[:, 7]
-    if roman_spec == 3:
+    if roman_exp == 3:
         all_test_m[:, 5] = all_test_m[:, 8]
         all_test_me[:, 5] = all_test_me[:, 8]
         all_train_m[:, 5] = all_train_m[:, 8]
         all_train_me[:, 5] = all_train_me[:, 8]
+    if roman_exp == 5:
+        all_test_m[:, 6] = all_test_m[:, 7]
+        all_test_me[:, 6] = all_test_me[:, 7]
+        all_train_m[:, 6] = all_train_m[:, 7]
+        all_train_me[:, 6] = all_train_me[:, 7]
+    if roman_exp == 6:
+        all_test_m[:, 6] = all_test_m[:, 8]
+        all_test_me[:, 6] = all_test_me[:, 8]
+        all_train_m[:, 6] = all_train_m[:, 8]
+        all_train_me[:, 6] = all_train_me[:, 8]
         
     # apply filtmask
     for f, fm in enumerate(filtmask):
@@ -169,6 +196,12 @@ def make_test_and_train(verbose, runid, filtmask, yfilt, catalog, roman_spec,
 
 
 def make_plots(verbose, runid, filtmask):
+    
+    '''
+    Create a set of standard plots showing histograms of test and training set galaxies.
+    
+    Plots are saved to output/run_<runid>/plot_cats/.
+    '''
 
     if verbose:
         print('Starting cmnn_catalog.make_plots: ',datetime.datetime.now())
@@ -247,4 +280,4 @@ def make_plots(verbose, runid, filtmask):
             if verbose: print('Wrote '+pfnm)
 
     if verbose:
-        print('Finshed cmnn_catalog.make_plots: ',datetime.datetime.now())
+        print('Finshed cmnn_catalog.make_plots: ', datetime.datetime.now())

@@ -8,7 +8,14 @@ import cmnn_analysis
 import cmnn_tools
 
 def str2bool(v):
-    #from https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse/36031646
+    
+    '''
+    Required for use with user-supplied boolean arguments.
+    
+    Source
+    https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse/36031646
+    '''
+    
     if isinstance(v, bool):
        return v
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -20,21 +27,27 @@ def str2bool(v):
 
 
 def run(verbose, runid, catalog, \
-        filtmask, yfilt, smart_nir, roman_spec, \
+        filtmask, yfilt, smart_nir, roman_exp, \
         test_m5, train_m5, test_mcut, train_mcut, \
         force_idet, force_gridet, test_N, train_N, \
         cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, \
         cmnn_ppmag, cmnn_ppclr, stats_COR):
     
+    '''
+    Runs the CMNN Estimator's three modules:
+    cmnn_catalog   creates the test and training sets
+    cmnn_photoz    calculates photo-z for the test set
+    cmnn_analysis  calculates statistics of photo-z quality
+    
+    All inputs are described by the argument parser in main.
+    '''
+    
     tmp_fnm = "output/run_"+runid+"/timestamps.dat"
     
     tmp_str = str(datetime.datetime.now())
     os.system("echo 'start cmnn_run: "+tmp_str+"' >> "+tmp_fnm)
-
-    tmp_str = str(datetime.datetime.now())
     os.system("echo 'start cmnn_catalog: "+tmp_str+"' >> "+tmp_fnm)
-
-    cmnn_catalog.make_test_and_train(verbose, runid, filtmask, yfilt, catalog, roman_spec, \
+    cmnn_catalog.make_test_and_train(verbose, runid, filtmask, yfilt, catalog, roman_exp, \
                                      test_m5, train_m5, test_mcut, train_mcut, \
                                      force_idet, force_gridet, test_N, train_N, \
                                      cmnn_minNc)
@@ -42,7 +55,6 @@ def run(verbose, runid, catalog, \
 
     tmp_str = str(datetime.datetime.now())
     os.system("echo 'start cmnn_photoz: "+tmp_str+"' >> "+tmp_fnm)
-    
     cmnn_photoz.make_zphot(verbose, runid, filtmask, smart_nir, \
                            force_idet, force_gridet, \
                            cmnn_minNc, cmnn_minNN, cmnn_ppf, \
@@ -50,7 +62,6 @@ def run(verbose, runid, catalog, \
 
     tmp_str = str(datetime.datetime.now())
     os.system("echo 'start cmnn_analysis: "+tmp_str+"' >> "+tmp_fnm)
-    
     cmnn_analysis.make_stats_file(verbose, runid, stats_COR)
     cmnn_analysis.make_stats_plots(verbose=verbose, runid=runid)
     cmnn_analysis.make_tzpz_plot(verbose, runid)
@@ -58,6 +69,9 @@ def run(verbose, runid, catalog, \
 
     tmp_str = str(datetime.datetime.now())
     os.system("echo 'finished cmnn_run: "+tmp_str+"' >> "+tmp_fnm)
+    
+    if verbose:
+        print("Wrote ", tmp_fnm)
     
     del tmp_fnm, tmp_str
 
@@ -89,13 +103,20 @@ if __name__ == '__main__':
                         choices=[0, 1])
 
     parser.add_argument('--smart_nir', action='store', dest='user_smart_nir', type=int, \
-                        help='only use NIR mags if the pz error is reduced', default=0, \
+                        help='only use NIR mags they reduce the pz uncertainty', default=0, \
                         choices=[0, 1])
     
-    # use with filtmask 1 1 1 1 1 1 0 0 0
-    parser.add_argument('--roman_spec', action='store', dest='user_roman_spec', type=int, \
-                        help='fifth color is 0:z-y, 1:z-J, 2:z-H, 3:z-K', default=0, \
-                        choices=[0, 1, 2, 3])
+    # Roman special experiements
+    #   0 : fifth color is z-y; use filtmask 1 1 1 1 1 1 0 0 0
+    #   1 : fifth color is z-J; use filtmask 1 1 1 1 1 1 0 0 0
+    #   2 : fifth color is z-H; use filtmask 1 1 1 1 1 1 0 0 0
+    #   3 : fifth color is z-K; use filtmask 1 1 1 1 1 1 0 0 0
+    #   4 : sixth color is y-J; use filtmask 1 1 1 1 1 1 1 0 0
+    #   5 : sixth color is y-H; use filtmask 1 1 1 1 1 1 1 0 0
+    #   6 : sixth color is y-K; use filtmask 1 1 1 1 1 1 1 0 0
+    parser.add_argument('--roman_exp', action='store', dest='user_roman_exp', type=int, \
+                        help='set the fifth or sixth color to include Roman mags', default=0, \
+                        choices=[0, 1, 2, 3, 4, 5, 6])
 
     parser.add_argument('--test_m5', nargs='+', action='store', dest='user_test_m5', type=float,\
                         help='5-sigma magnitude limits (depths) for test-set galaxies', \
@@ -160,6 +181,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     
+    # check for errors, exit with message for user
+    
     # ensure the input catalog exists
     if (os.path.isfile(args.user_catalog) == False):
         print('Error. Mock galaxy catalog file is missing or misnamed:')
@@ -195,17 +218,28 @@ if __name__ == '__main__':
        (len(args.user_test_mcut) != Nfilts) | (len(args.user_train_mcut) != Nfilts) | \
        (len(args.user_filtmask) != Nfilts):
         print('Error. Input lists must have '+str(Nfilts)+' elements (one per filter u g r i z y J H K).')
-        print('  filtmask   : %i ' % len(args.user_filtmask))
-        print('  test_m5    : %i ' % len(args.user_test_m5))
-        print('  train_m5   : %i ' % len(args.user_train_m5))
-        print('  test_mcut  : %i ' % len(args.user_test_mcut))
-        print('  train_mcut : %i ' % len(args.user_train_mcut))
+        print('  len(filtmask)   : %i ' % len(args.user_filtmask))
+        print('  len(test_m5)    : %i ' % len(args.user_test_m5))
+        print('  len(train_m5)   : %i ' % len(args.user_train_m5))
+        print('  len(test_mcut)  : %i ' % len(args.user_test_mcut))
+        print('  len(train_mcut) : %i ' % len(args.user_train_mcut))
         print('Exit (bad inputs).')
         exit()
+        
+    # if smart_nir = 1, then at least one NIR filter should be used
+    if args.user_smart_nir == 1:
+        temp = np.asarray(args.user_filtmask, dtype='int')
+        if (temp[6] == 0) & (temp[7] ==0) & (temp[8] == 0):
+            print('Error. If smart_nir = 1, then at least one NIR filter should be used.')
+            print('  smart_nir : %1i ' % args.user_smart_nir)
+            print('  filtmask  : ', temp)
+            print('Exit (smart_nir does not match filtmask).')
+            exit()
 
     # check the other inputs
     fail = False
-
+    
+    # set minimum and maximum values for the magnitudes
     filters  = ['u', 'g', 'r', 'i', 'z', 'y', 'J', 'H', 'K']
     m5_min   = [23.9, 25.0, 24.7, 24.0, 23.3, 22.1, 20.0, 20.0, 20.0]
     m5_max   = [29.0, 29.0, 29.0, 29.0, 29.0, 29.0, 29.0, 29.0, 29.0]
@@ -236,13 +270,21 @@ if __name__ == '__main__':
         fail = True
     del filters, m5_min, m5_max, mcut_min, mcut_max, mfail, message
     
-    if args.user_roman_spec > 0:
+    if args.user_roman_exp > 0:
         temp = np.asarray(args.user_filtmask, dtype='int')
-        if (temp[6] == 1) | (temp[7] == 1) | (temp[8] == 1):
-            print('Error. For Roman special runs, filtmask must be set appropriately.')
-            print('  roman_spec : ', args.user_roman_spec)
-            print('  filtmask : ', temp)
-            fail = True
+        if (args.user_roman_exp == 1) | (args.user_roman_exp == 2) | (args.user_roman_exp == 3):
+            if (temp[6] == 1) | (temp[7] == 1) | (temp[8] == 1):
+                print('Error. For these Roman experiments, filtmask must be 0 for J, H, and K.')
+                print('  roman_exp : ', args.user_roman_exp)
+                print('  filtmask : ', temp)
+                fail = True
+        elif (args.user_roman_exp == 4) | (args.user_roman_exp == 5) | (args.user_roman_exp == 6):
+            if (temp[7] == 1) | (temp[8] == 1):
+                print('Error. For these Roman experiments, filtmask must be 0 for H and K.')
+                print('  roman_exp : ', args.user_roman_exp)
+                print('  filtmask : ', temp)
+                fail = True
+        del temp
         
     if args.user_stats_COR <= 0:
         print('Error. Input value for stats_COR must be greater than zero.')
@@ -254,8 +296,8 @@ if __name__ == '__main__':
         print('  test_N : %i \n' % args.user_test_N)
         fail = True
 
-    if (args.user_train_N < 50000) | (args.user_train_N > 200000):
-        print('Error. Input value for train_N must be between 50000 and 200000.')
+    if (args.user_train_N < 10000) | (args.user_train_N > 200000):
+        print('Error. Input value for train_N must be between 10000 and 200000.')
         print('  train_N : %i \n' % args.user_train_N)
         fail = True
 
@@ -280,64 +322,64 @@ if __name__ == '__main__':
         print('Done checking user input, all have passed.')
 
     fout = open(tmp_path+'/inputs.txt', 'w')
-    fout.write('%-11s %s \n' % ('catalog', args.user_catalog))
-    fout.write('%-11s %r \n' % ('clobber', args.user_clobber))
-    fout.write('%-11s %s \n' % ('runid', args.user_runid))
-    fout.write('%-11s %1i \n' % ('yfilt', args.user_yfilt))
-    fout.write('%-11s %1i \n' % ('smart_nir', args.user_smart_nir))
-    fout.write('%-11s %1i \n' % ('roman_spec', args.user_roman_spec))
-    fout.write('%-11s %1i %1i %1i %1i %1i %1i %1i %1i %1i \n' % \
+    fout.write('%-13s %s \n' % ('catalog', args.user_catalog))
+    fout.write('%-13s %r \n' % ('clobber', args.user_clobber))
+    fout.write('%-13s %s \n' % ('runid', args.user_runid))
+    fout.write('%-13s %1i \n' % ('yfilt', args.user_yfilt))
+    fout.write('%-13s %1i \n' % ('smart_nir', args.user_smart_nir))
+    fout.write('%-13s %1i \n' % ('roman_exp', args.user_roman_exp))
+    fout.write('%-13s %1i %1i %1i %1i %1i %1i %1i %1i %1i \n' % \
                ('filtmask',\
                 args.user_filtmask[0], args.user_filtmask[1], args.user_filtmask[2],\
                 args.user_filtmask[3], args.user_filtmask[4], args.user_filtmask[5],\
                 args.user_filtmask[6], args.user_filtmask[7], args.user_filtmask[8]))
-    fout.write('%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
+    fout.write('%-13s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
                ('test_m5',\
                 args.user_test_m5[0], args.user_test_m5[1], args.user_test_m5[2],\
                 args.user_test_m5[3], args.user_test_m5[4], args.user_test_m5[5],\
                 args.user_test_m5[6], args.user_test_m5[7], args.user_test_m5[8]))
-    fout.write('%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
+    fout.write('%-13s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
                ('test_m5',\
                 args.user_test_m5[0], args.user_test_m5[1], args.user_test_m5[2],\
                 args.user_test_m5[3], args.user_test_m5[4], args.user_test_m5[5],\
                 args.user_test_m5[6], args.user_test_m5[7], args.user_test_m5[8]))
-    fout.write( '%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
+    fout.write( '%-13s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
                ('train_m5',\
                 args.user_train_m5[0], args.user_train_m5[1], args.user_train_m5[2],\
                 args.user_train_m5[3], args.user_train_m5[4], args.user_train_m5[5],\
                 args.user_train_m5[6], args.user_train_m5[7], args.user_train_m5[8]))
-    fout.write('%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
+    fout.write('%-13s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
                ('test_mcut',\
                 args.user_test_mcut[0], args.user_test_mcut[1], args.user_test_mcut[2],\
                 args.user_test_mcut[3], args.user_test_mcut[4], args.user_test_mcut[5],\
                 args.user_test_mcut[6], args.user_test_mcut[7], args.user_test_mcut[8]))
-    fout.write('%-11s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
+    fout.write('%-13s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f \n' % \
                ('train_mcut',\
                 args.user_train_mcut[0], args.user_train_mcut[1], args.user_train_mcut[2],\
                 args.user_train_mcut[3], args.user_train_mcut[4], args.user_train_mcut[5],\
                 args.user_train_mcut[6], args.user_train_mcut[7], args.user_train_mcut[8]))
-    fout.write('%-11s %r    \n' % ('force_idet', args.user_force_idet))
-    fout.write('%-11s %r    \n' % ('force_gridet', args.user_force_gridet))
-    fout.write('%-11s %i    \n' % ('test_N', args.user_test_N))
-    fout.write('%-11s %i    \n' % ('train_N', args.user_train_N))
-    fout.write('%-11s %i    \n' % ('cmnn_minNc', args.user_cmnn_minNc))
-    fout.write('%-11s %i    \n' % ('cmnn_minNN', args.user_cmnn_minNN))
-    fout.write('%-11s %5.3f \n' % ('cmnn_ppf', args.user_cmnn_ppf))
-    fout.write('%-11s %i    \n' % ('cmnn_rsel', args.user_cmnn_rsel))
-    fout.write('%-11s %r    \n' % ('cmnn_ppmag', args.user_cmnn_ppmag))
-    fout.write('%-11s %r    \n' % ('cmnn_ppclr', args.user_cmnn_ppclr))
-    fout.write('%-11s %4.2f \n' % ('stats_COR', args.user_stats_COR))
+    fout.write('%-13s %r    \n' % ('force_idet', args.user_force_idet))
+    fout.write('%-13s %r    \n' % ('force_gridet', args.user_force_gridet))
+    fout.write('%-13s %i    \n' % ('test_N', args.user_test_N))
+    fout.write('%-13s %i    \n' % ('train_N', args.user_train_N))
+    fout.write('%-13s %i    \n' % ('cmnn_minNc', args.user_cmnn_minNc))
+    fout.write('%-13s %i    \n' % ('cmnn_minNN', args.user_cmnn_minNN))
+    fout.write('%-13s %5.3f \n' % ('cmnn_ppf', args.user_cmnn_ppf))
+    fout.write('%-13s %i    \n' % ('cmnn_rsel', args.user_cmnn_rsel))
+    fout.write('%-13s %r    \n' % ('cmnn_ppmag', args.user_cmnn_ppmag))
+    fout.write('%-13s %r    \n' % ('cmnn_ppclr', args.user_cmnn_ppclr))
+    fout.write('%-13s %4.2f \n' % ('stats_COR', args.user_stats_COR))
     fout.close()
 
     if args.user_verbose:
-        print('Find user inputs in '+tmp_path+'/inputs.txt')
-        print('Find user processing timestamps in '+tmp_path+'/timestamps.txt')
+        print('Find user inputs in ' + tmp_path + '/inputs.txt')
+        print('Find user processing timestamps in ' + tmp_path + '/timestamps.txt')
         print(' ')
         print('Starting cmnn_run.run: ', datetime.datetime.now())
     del tmp_path
         
     run(args.user_verbose, args.user_runid, args.user_catalog, \
-        args.user_filtmask, args.user_yfilt, args.user_smart_nir, args.user_roman_spec, \
+        args.user_filtmask, args.user_yfilt, args.user_smart_nir, args.user_roman_exp, \
         args.user_test_m5, args.user_train_m5, args.user_test_mcut, args.user_train_mcut, \
         args.user_force_idet, args.user_force_gridet, args.user_test_N, args.user_train_N, \
         args.user_cmnn_minNc, args.user_cmnn_minNN, args.user_cmnn_ppf, args.user_cmnn_rsel, \

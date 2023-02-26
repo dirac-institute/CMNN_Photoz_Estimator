@@ -313,27 +313,30 @@ def make_stats_file(verbose, runid, stats_COR, input_zbins=[None], \
     if verbose: print('Wrote to: ',ofnm)
 
 
-def make_stats_plots(verbose=True, runid=None, user_stats=['fout','CORIQRstdd','CORIQRbias'], \
-                     statsfile_suffix=None, bin_in_truez=False, \
-                     show_SRD=True, show_binw=True, \
-                     multi_run_ids=None, multi_run_labels=None, \
-                     multi_run_colors=['blue','orange','red','green','darkviolet'], \
-                     plot_title = ''):
+def make_stats_plots(verbose = True, runid = None, user_stats = ['fout', 'CORIQRstdd', 'CORIQRbias'], \
+                     statsfile_suffix = None, bin_in_truez = False, \
+                     show_SRD = True, show_binw = True, \
+                     multi_run_ids = None, multi_run_labels = None, \
+                     multi_run_colors = ['black', 'orange', 'green', 'darkviolet', 'blue', 'red'], \
+                     plot_title = '', custom_pfnm_id = None, custom_axlims = None):
 
     '''
     Make plots for all the photo-z statistics for a given run.
 
     Input definitions 
-     verbose          : extra output to screen
-     runid            : the run to make plots for (ignored if multi_run_ids != None)
-     user_stats       : array listing which stats to create plots for, default is ['fout','CORIQRstdd','CORIQRbias']
-     statsfile_suffix : if not None, read file "stats_[suffix].dat" and add suffix to output plot names
-     bin_in_truez     : if True, plot vs. true z (read file "stats_truezbins.dat" not "stats.dat")
-     show_SRD         : True/False; if True, the SRD target values are shown as dashed horizontal lines
-     show_binw        : True/False; if True, the bin widths are shown as light horizontal bars
-     multi_run_ids    : array of multiple run ids to co-plot
-     multi_run_labels : array of legend labels that describe each run
-     multi_run_colors : array of color names to use for each run (five provided as defaults)
+      verbose          : extra output to screen
+      runid            : the run to make plots for (ignored if multi_run_ids != None)
+      user_stats       : array listing which stats to create plots for, default is ['fout','CORIQRstdd','CORIQRbias']
+      statsfile_suffix : if not None, read file "stats_[suffix].dat" and add suffix to output plot names
+      bin_in_truez     : if True, plot vs. true z (read file "stats_truezbins.dat" not "stats.dat")
+      show_SRD         : True/False; if True, the SRD target values are shown as dashed horizontal lines
+      show_binw        : True/False; if True, the bin widths are shown as light horizontal bars
+      multi_run_ids    : array of multiple run ids to co-plot
+      multi_run_labels : array of legend labels that describe each run
+      multi_run_colors : array of color names to use for each run (six provided as defaults)
+      plot_title       : add a title to the plot
+      custom_pfmn_id   : custom plotname identifier (only for use instead of multiple runids)
+      custom_axlims  : custom axes limits [[x1, x2], [y1, y2]]
     '''
 
     if verbose:
@@ -356,6 +359,14 @@ def make_stats_plots(verbose=True, runid=None, user_stats=['fout','CORIQRstdd','
     if verbose:
         print('run ids: ', multi_run_ids)
         print('run labels: ', multi_run_labels)
+    
+    if (multi_run_ids == None) & (custom_pfnm_id != None):
+        print(' ')
+        print('Error, custom_pfnm_id is only for use with multi_run_ids.')
+        print('  custom_pfnm_id: ', custom_pfnm_id)
+        print('  multi_run_ids: ', multi_run_ids)
+        print('Exit.')
+        exit()
 
     # At this point, multi_run_ids is populated, let's make sure it's correct
     if (len(multi_run_ids) != len(multi_run_labels)):
@@ -375,9 +386,9 @@ def make_stats_plots(verbose=True, runid=None, user_stats=['fout','CORIQRstdd','
         print('  len(multi_run_ids) = ',    len(multi_run_ids))
         print('  len(multi_run_colors) = ', len(multi_run_colors))
         print('The default list of colors is: ')
-        print("  multi_run_colors=['blue','orange','red','green','darkviolet']")
+        print("  multi_run_colors=['black', 'orange', 'green', 'darkviolet', 'blue', 'red']")
         print('For example, if you have 7 runs to compare, you might want to pass:')
-        print("  multi_run_colors=['blue','orange','red','green','darkviolet','brown','magenta']")
+        print("  multi_run_colors=['black', 'orange', 'green', 'darkviolet', 'blue', 'red', 'brown']")
         print('Exit.')
         exit()
     for run_id in multi_run_ids:
@@ -512,7 +523,11 @@ def make_stats_plots(verbose=True, runid=None, user_stats=['fout','CORIQRstdd','
             plt.xlabel('True Redshift')
         plt.ylabel(stats_labels[s])
         legend=plt.legend(loc='best',numpoints=1,prop={'size':14},labelspacing=0.15) #,title=lgnd_title)
-        # legend.get_title().set_fontsize('14') 
+        # legend.get_title().set_fontsize('14')
+        
+        if custom_axlims != None:
+            plt.xlim(custom_axlims[0])
+            plt.ylim(custom_axlims[1])
 
         if len(multi_run_ids) == 1:
             if bin_in_truez == False:
@@ -524,6 +539,8 @@ def make_stats_plots(verbose=True, runid=None, user_stats=['fout','CORIQRstdd','
                 if statsfile_suffix != None:
                     pfnm = 'output/run_'+multi_run_ids[0]+'/analysis/'+stat+'_'+statsfile_suffix+'_truezbins'
         if len(multi_run_ids) > 1:
+            if os.path.exists('output/stats_plots') == False:
+                os.system('mkdir output/stats_plots')        
             if bin_in_truez == False:
                 pfnm = 'output/stats_plots/'+stat+pfnm_suffix
                 if statsfile_suffix != None:
@@ -532,9 +549,9 @@ def make_stats_plots(verbose=True, runid=None, user_stats=['fout','CORIQRstdd','
                 pfnm = 'output/stats_plots/'+stat+'_truezbins'+pfnm_suffix
                 if statsfile_suffix != None:
                     pfnm = 'output/stats_plots/'+stat+'_'+statsfile_suffix+'_truezbins'+pfnm_suffix
-            if os.path.exists('output/stats_plots') == False:
-                os.system('mkdir output/stats_plots')
-
+            if custom_pfnm_id != None:
+                pfnm = 'output/stats_plots/' + stat + '_' + custom_pfnm_id
+            
         if plot_title != '':
             plt.title(plot_title)                                 
 

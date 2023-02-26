@@ -19,14 +19,14 @@ def return_photoz(test_c, test_ce, train_c, train_z, \
     ppf_value     percent point function value (typically 0.68 or 0.95)
     thresh_table  table of thresholds to apply based on the ppf_value
     sel_mode      how the photo-z will be selected from the CMNN subset of training galaxies
-                   '--> 0 : random, 1 : nearest neighbor, 2 : weighted random
+                     '--> 0 : random, 1 : nearest neighbor, 2 : weighted random
     min_Nc        minimum number of colors used to identify the CMNN subset of training galaxies
     min_Nn        the minimum size of the CMNN subset of training galaxies
 
     Outputs
-    out_pz      the photometric redshift for the test galaxy
-    out_pze     the uncertainty in the photo-z for the test galaxy
-    Ncm         the number of training-set galaxies in the color-matched subset
+    out_pz   the photometric redshift for the test galaxy
+    out_pze  the uncertainty in the photo-z for the test galaxy
+    Ncm      the number of training-set galaxies in the color-matched subset
     '''
 
     # Calculate the Mahalanobis Distance for each training set galaxy
@@ -151,6 +151,24 @@ def make_zphot(verbose, runid, filtmask, smart_nir, \
                force_idet, force_gridet, \
                cmnn_minNc, cmnn_minNN, cmnn_ppf, \
                cmnn_rsel, cmnn_ppmag, cmnn_ppclr):
+    
+    '''
+    Estimate photometric redshifts for the test set.
+    
+    Inputs described in cmnn_run.main.
+    
+    Output: output/run_<runid>/zphot.cat
+    
+    Columns of zphot.cat are (one row per test set galaxy):
+    0 : unique identifier
+    1 : true redshift
+    2 : photometric redshift
+    3 : uncertainty in photometric redshift
+    4 : number of training-set galaxies in the CMNN subset
+    5 : total number of training-set galaxies passed
+    6 : flag_nir
+          '--> 0 : NIR increased pz unc; 1 : NIR decreased pz unc; -1 : smart_nir was False
+    '''
 
     if verbose:
         print('Starting cmnn_photoz.make_zphot: ', datetime.datetime.now())
@@ -228,19 +246,20 @@ def make_zphot(verbose, runid, filtmask, smart_nir, \
                                     all_train_c[trx], all_train_tz[trx], \
                                     cmnn_ppf, cmnn_thresh_table, cmnn_rsel, \
                                     cmnn_minNc, cmnn_minNN)
-            # repeat, but with only ugrizy filters (colors 0:4)
             if smart_nir:
-                flag_nir = 1
+                # repeat, but with only ugrizy filters (colors 0:5)
                 results2 = return_photoz(all_test_c[i, 0:5], all_test_ce[i, 0:5], \
                                          all_train_c[trx, 0:5], all_train_tz[trx], \
                                          cmnn_ppf, cmnn_thresh_table, cmnn_rsel, \
                                          cmnn_minNc, cmnn_minNN)
-                # use the results with smaller pzerror
+                # if ugrizy-only resulted in a smaller uncertainty in pz
                 if results[1] > results2[1]:
                     results[0] = results2[0]
                     results[1] = results2[1]
                     results[2] = results2[2]
                     flag_nir = 0
+                else:
+                    flag_nir = 1
                 del results2
             else:
                 flag_nir = -1         
@@ -273,22 +292,23 @@ def make_zphot(verbose, runid, filtmask, smart_nir, \
                                     all_train_c[trx], all_train_tz[trx], \
                                     cmnn_ppf, cmnn_thresh_table, cmnn_rsel, \
                                     cmnn_minNc, cmnn_minNN)
-            # repeat, but with only ugrizy filters (colors 0:4)
             if smart_nir:
-                flag_nir = 1
+                # repeat, but with only ugrizy filters (colors 0:5)
                 results2 = return_photoz(all_test_c[i, 0:5], all_test_ce[i, 0:5], \
                                          all_train_c[trx, 0:5], all_train_tz[trx], \
                                          cmnn_ppf, cmnn_thresh_table, cmnn_rsel, \
                                          cmnn_minNc, cmnn_minNN)
-                # use the results with smaller pzerror
+                # if ugrizy-only resulted in a smaller uncertainty in pz
                 if results[1] > results2[1]:
                     results[0] = results2[0]
                     results[1] = results2[1]
                     results[2] = results2[2]
                     flag_nir = 0
+                else:
+                    flag_nir = 1
                 del results2
             else:
-                flag_nir = -1
+                flag_nir = -1         
             del trx, ilow, ihi
 
         ### Condition 3: Apply the color cut (time saver), and optionally the i mag limit
@@ -326,22 +346,23 @@ def make_zphot(verbose, runid, filtmask, smart_nir, \
                                     all_train_c[trx], all_train_tz[trx], \
                                     cmnn_ppf, cmnn_thresh_table, cmnn_rsel, \
                                     cmnn_minNc, cmnn_minNN)
-            # repeat, but with only ugrizy filters (colors 0:4)
             if smart_nir:
-                flag_nir = 1
+                # repeat, but with only ugrizy filters (colors 0:5)
                 results2 = return_photoz(all_test_c[i, 0:5], all_test_ce[i, 0:5], \
                                          all_train_c[trx, 0:5], all_train_tz[trx], \
                                          cmnn_ppf, cmnn_thresh_table, cmnn_rsel, \
                                          cmnn_minNc, cmnn_minNN)
-                # use the results with smaller pzerror
+                # if ugrizy-only resulted in a smaller uncertainty in pz
                 if results[1] > results2[1]:
                     results[0] = results2[0]
                     results[1] = results2[1]
                     results[2] = results2[2]
                     flag_nir = 0
+                else:
+                    flag_nir = 1
                 del results2
             else:
-                flag_nir = -1
+                flag_nir = -1         
             del trx, ilow, ihi, grlow, grhi, rilow, rihi
 
         fout.write('%10i %12.8f %12.8f %12.8f %10i %10i %2i \n' % \
