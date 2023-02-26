@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import argparse
 import datetime
 import cmnn_catalog
@@ -18,7 +19,8 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-def run(verbose, runid, filtmask, yfilt, catalog, \
+def run(verbose, runid, catalog, \
+        filtmask, yfilt, smart_nir, roman_spec, \
         test_m5, train_m5, test_mcut, train_mcut, \
         force_idet, force_gridet, test_N, train_N, \
         cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, \
@@ -32,7 +34,7 @@ def run(verbose, runid, filtmask, yfilt, catalog, \
     tmp_str = str(datetime.datetime.now())
     os.system("echo 'start cmnn_catalog: "+tmp_str+"' >> "+tmp_fnm)
 
-    cmnn_catalog.make_test_and_train(verbose, runid, filtmask, yfilt, catalog, \
+    cmnn_catalog.make_test_and_train(verbose, runid, filtmask, yfilt, catalog, roman_spec, \
                                      test_m5, train_m5, test_mcut, train_mcut, \
                                      force_idet, force_gridet, test_N, train_N, \
                                      cmnn_minNc)
@@ -41,7 +43,7 @@ def run(verbose, runid, filtmask, yfilt, catalog, \
     tmp_str = str(datetime.datetime.now())
     os.system("echo 'start cmnn_photoz: "+tmp_str+"' >> "+tmp_fnm)
     
-    cmnn_photoz.make_zphot(verbose, runid, filtmask, \
+    cmnn_photoz.make_zphot(verbose, runid, filtmask, smart_nir, \
                            force_idet, force_gridet, \
                            cmnn_minNc, cmnn_minNN, cmnn_ppf, \
                            cmnn_rsel, cmnn_ppmag, cmnn_ppclr)
@@ -64,19 +66,19 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Allow for passing of arguments.')
 
-    parser.add_argument('--catalog', action='store', dest='user_catalog', type=str, \
-                        help='user-specified galaxy catalog with full path', \
-                        default='mock_catalog.dat')
-    
     parser.add_argument('--verbose', action='store', dest='user_verbose', type=str2bool, \
                         help='print optional information to the screen', default=True)
     
     parser.add_argument('--runid', action='store', dest='user_runid', type=str, \
                         help='user-specified run identifier', default='myrunid')
 
+    parser.add_argument('--catalog', action='store', dest='user_catalog', type=str, \
+                        help='user-specified galaxy catalog with full path', \
+                        default='mock_catalog.dat')
+    
     parser.add_argument('--clobber', action='store', dest='user_clobber', type=str2bool, \
                         help='overwrite existing output for given runid', default=False, \
-                        choices=[True,False])
+                        choices=[True, False])
     
     parser.add_argument('--filtmask', nargs='+', action='store', dest='user_filtmask', type=int,\
                         help='set mask for use of filters u g r i z y J H K', \
@@ -84,31 +86,40 @@ if __name__ == '__main__':
 
     parser.add_argument('--yfilt', action='store', dest='user_yfilt', type=int, \
                         help='y-band filter: 0=PanSTARRS or 1=Euclid', default=0, \
-                        choices=[0,1])
+                        choices=[0, 1])
+
+    parser.add_argument('--smart_nir', action='store', dest='user_smart_nir', type=int, \
+                        help='only use NIR mags if the pz error is reduced', default=0, \
+                        choices=[0, 1])
     
+    # use with filtmask 1 1 1 1 1 1 0 0 0
+    parser.add_argument('--roman_spec', action='store', dest='user_roman_spec', type=int, \
+                        help='fifth color is 0:z-y, 1:z-J, 2:z-H, 3:z-K', default=0, \
+                        choices=[0, 1, 2, 3])
+
     parser.add_argument('--test_m5', nargs='+', action='store', dest='user_test_m5', type=float,\
                         help='5-sigma magnitude limits (depths) for test-set galaxies', \
-                        default=[26.1, 27.4, 27.5, 26.8, 26.1, 24.9, 24.0, 24.2, 23.9])
+                        default=[26.1, 27.4, 27.5, 26.8, 26.1, 24.9, 24.0, 24.0, 24.0])
     
     parser.add_argument('--train_m5', nargs='+', action='store', dest='user_train_m5', type=float,\
                         help='5-sigma magnitude limits (depths) for training-set galaxies', \
-                        default=[26.1, 27.4, 27.5, 26.8, 26.1, 24.9, 24.0, 24.2, 23.9])
+                        default=[26.1, 27.4, 27.5, 26.8, 26.1, 24.9, 24.0, 24.0, 24.0])
 
     parser.add_argument('--test_mcut', nargs='+', action='store', dest='user_test_mcut', type=float,\
                         help='magnitude cut-off to apply to the test-set galaxies', 
-                        default=[26.1, 27.4, 27.5, 25.0, 26.1, 24.9, 24.0, 24.2, 23.9])
+                        default=[26.1, 27.4, 27.5, 25.0, 26.1, 24.9, 24.0, 24.0, 24.0])
     
     parser.add_argument('--train_mcut', nargs='+', action='store', dest='user_train_mcut', type=float,\
                         help='magnitude cut-off to apply to the training-set galaxies', \
-                        default=[26.1, 27.4, 27.5, 25.0, 26.1, 24.9, 24.0, 24.2, 23.9])
+                        default=[26.1, 27.4, 27.5, 25.0, 26.1, 24.9, 24.0, 24.0, 24.0])
    
     parser.add_argument('--force_idet', action='store', dest='user_force_idet', type=str2bool, \
                         help='force i-band detection for all galaxies', default=True, \
-                        choices=[True,False])
+                        choices=[True, False])
 
     parser.add_argument('--force_gridet', action='store', dest='user_force_gridet', type=str2bool, \
                         help='force g+r+i-band detection for all galaxies', default=True, \
-                        choices=[True,False])
+                        choices=[True, False])
 
     parser.add_argument('--test_N', action='store', dest='user_test_N', type=int, \
                         help='number of test-set galaxies', default=40000)
@@ -117,8 +128,8 @@ if __name__ == '__main__':
                         help='number of training-set galaxies', default=100000)
 
     parser.add_argument('--cmnn_minNc', action='store', dest='user_cmnn_minNc', type=int, \
-                        help='CMNN: minimum number of colors for galaxies (2 to 8)', default=5, \
-                        choices=[2,3,4,5,6,7,8])
+                        help='CMNN: minimum number of colors for galaxies (2 to 8)', default=3, \
+                        choices=[2, 3, 4, 5, 6, 7, 8])
 
     parser.add_argument('--cmnn_minNN', action='store', dest='user_cmnn_minNN', type=int, \
                         help='CMNN: minimum number of nearest neighbors (up to 21)', default=10, \
@@ -126,25 +137,25 @@ if __name__ == '__main__':
 
     parser.add_argument('--cmnn_ppf', action='store', dest='user_cmnn_ppf', type=float, \
                         help='CMNN: percent point function value (0.68 or 0.95)', default=0.680, \
-                        choices=[0.680,0.950])
+                        choices=[0.680, 0.950])
 
     # 0 : random
     # 1 : nearest neighbor (lowest Mahalanobis distance)
     # 2 : random weighted by inverse of Mahalanobis distance
     parser.add_argument('--cmnn_rsel', action='store', dest='user_cmnn_rsel', type=int, \
                         help='CMNN: mode of random selection from CMNN subset (0, 1, or 2)', default=2, \
-                        choices=[0,1,2])
+                        choices=[0, 1, 2])
 
     parser.add_argument('--cmnn_ppmag', action='store', dest='user_cmnn_ppmag', type=str2bool, \
                         help='CMNN: apply magnitude pre-cut to training set', default=False, \
-                        choices=[True,False])
+                        choices=[True, False])
 
     parser.add_argument('--cmnn_ppclr', action='store', dest='user_cmnn_ppclr', type=str2bool, \
                         help='CMNN: apply color pre-cut to training set', default=True, \
-                        choices=[True,False])
+                        choices=[True, False])
 
     parser.add_argument('--stats_COR', action='store', dest='user_stats_COR', type=float, \
-                        help='reject galaxies with (ztrue-zphot)/(1+zphot) > VALUE from the stddev and bias', \
+                        help='reject galaxies with (ztrue-zphot) > VALUE from the stddev and bias', \
                         default=1.5)
 
     args = parser.parse_args()
@@ -195,10 +206,10 @@ if __name__ == '__main__':
     # check the other inputs
     fail = False
 
-    filters  = ['u','g','r','i','z','y','J','H','K']
+    filters  = ['u', 'g', 'r', 'i', 'z', 'y', 'J', 'H', 'K']
     m5_min   = [23.9, 25.0, 24.7, 24.0, 23.3, 22.1, 20.0, 20.0, 20.0]
     m5_max   = [29.0, 29.0, 29.0, 29.0, 29.0, 29.0, 29.0, 29.0, 29.0]
-    mcut_min = [17.0, 17.0, 17.0, 17.0, 17.0, 17.0, 16.0, 16.0, 16.0]
+    mcut_min = [18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0]
     mcut_max = [29.0, 29.0, 29.0, 25.0, 29.0, 29.0, 29.0, 29.0, 29.0]
     mfail = False
     message = ''
@@ -224,7 +235,15 @@ if __name__ == '__main__':
         print(message)
         fail = True
     del filters, m5_min, m5_max, mcut_min, mcut_max, mfail, message
-
+    
+    if args.user_roman_spec > 0:
+        temp = np.asarray(args.user_filtmask, dtype='int')
+        if (temp[6] == 1) | (temp[7] == 1) | (temp[8] == 1):
+            print('Error. For Roman special runs, filtmask must be set appropriately.')
+            print('  roman_spec : ', args.user_roman_spec)
+            print('  filtmask : ', temp)
+            fail = True
+        
     if args.user_stats_COR <= 0:
         print('Error. Input value for stats_COR must be greater than zero.')
         print('  stats_COR : %4.2f \n' % args.user_stats_COR)
@@ -265,6 +284,8 @@ if __name__ == '__main__':
     fout.write('%-11s %r \n' % ('clobber', args.user_clobber))
     fout.write('%-11s %s \n' % ('runid', args.user_runid))
     fout.write('%-11s %1i \n' % ('yfilt', args.user_yfilt))
+    fout.write('%-11s %1i \n' % ('smart_nir', args.user_smart_nir))
+    fout.write('%-11s %1i \n' % ('roman_spec', args.user_roman_spec))
     fout.write('%-11s %1i %1i %1i %1i %1i %1i %1i %1i %1i \n' % \
                ('filtmask',\
                 args.user_filtmask[0], args.user_filtmask[1], args.user_filtmask[2],\
@@ -315,7 +336,8 @@ if __name__ == '__main__':
         print('Starting cmnn_run.run: ', datetime.datetime.now())
     del tmp_path
         
-    run(args.user_verbose, args.user_runid, args.user_filtmask, args.user_yfilt, args.user_catalog, \
+    run(args.user_verbose, args.user_runid, args.user_catalog, \
+        args.user_filtmask, args.user_yfilt, args.user_smart_nir, args.user_roman_spec, \
         args.user_test_m5, args.user_train_m5, args.user_test_mcut, args.user_train_mcut, \
         args.user_force_idet, args.user_force_gridet, args.user_test_N, args.user_train_N, \
         args.user_cmnn_minNc, args.user_cmnn_minNN, args.user_cmnn_ppf, args.user_cmnn_rsel, \

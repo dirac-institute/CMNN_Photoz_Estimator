@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 
-def make_test_and_train(verbose, runid, filtmask, yfilt, catalog, 
+def make_test_and_train(verbose, runid, filtmask, yfilt, catalog, roman_spec, 
                         test_m5, train_m5, test_mcut, train_mcut, 
                         force_idet, force_gridet, test_N, train_N, cmnn_minNc):
     
@@ -87,6 +87,24 @@ def make_test_and_train(verbose, runid, filtmask, yfilt, catalog,
                 all_train_m[tr_x, :] = np.nan
                 all_train_me[tr_x, :] = np.nan
         del te_x,tr_x
+    
+    # roman special runs
+    # fifth color is 0:z-y, 1:z-J, 2:z-H, 3:z-K
+    if roman_spec == 1:
+        all_test_m[:, 5] = all_test_m[:, 6]
+        all_test_me[:, 5] = all_test_me[:, 6]
+        all_train_m[:, 5] = all_train_m[:, 6]
+        all_train_me[:, 5] = all_train_me[:, 6]
+    if roman_spec == 2:
+        all_test_m[:, 5] = all_test_m[:, 7]
+        all_test_me[:, 5] = all_test_me[:, 7]
+        all_train_m[:, 5] = all_train_m[:, 7]
+        all_train_me[:, 5] = all_train_me[:, 7]
+    if roman_spec == 3:
+        all_test_m[:, 5] = all_test_m[:, 8]
+        all_test_me[:, 5] = all_test_me[:, 8]
+        all_train_m[:, 5] = all_train_m[:, 8]
+        all_train_me[:, 5] = all_train_me[:, 8]
         
     # apply filtmask
     for f, fm in enumerate(filtmask):
@@ -160,13 +178,13 @@ def make_plots(verbose, runid, filtmask):
 
     fnm = 'output/run_'+runid+'/test.cat'
     test_tz = np.loadtxt( fnm, dtype='float', usecols=(1))
-    test_m  = np.loadtxt( fnm, dtype='float', usecols=(2,4,6,8,10,12,14,16,18))
-    test_me = np.loadtxt( fnm, dtype='float', usecols=(3,5,7,9,11,13,15,17,19))
+    test_m  = np.loadtxt( fnm, dtype='float', usecols=(2, 4, 6, 8, 10, 12, 14, 16, 18))
+    test_me = np.loadtxt( fnm, dtype='float', usecols=(3, 5, 7, 9, 11, 13, 15, 17, 19))
 
     fnm = 'output/run_'+runid+'/train.cat'
     train_tz = np.loadtxt( fnm, dtype='float', usecols=(1))
-    train_m  = np.loadtxt( fnm, dtype='float', usecols=(2,4,6,8,10,12,14,16,18))
-    train_me = np.loadtxt( fnm, dtype='float', usecols=(3,5,7,9,11,13,15,17,19))
+    train_m  = np.loadtxt( fnm, dtype='float', usecols=(2, 4, 6, 8, 10, 12, 14, 16, 18))
+    train_me = np.loadtxt( fnm, dtype='float', usecols=(3, 5, 7, 9, 11, 13, 15, 17, 19))
 
     # redshift
     pfnm = 'output/run_'+runid+'/plot_cats/hist_ztrue'
@@ -180,6 +198,7 @@ def make_plots(verbose, runid, filtmask):
     plt.ylabel('Fraction of Galaxies')
     plt.legend(loc='upper right', prop={'size':16}, labelspacing=0.5)
     plt.savefig(pfnm, bbox_inches='tight')
+    plt.close()
     if verbose: print('Wrote '+pfnm)
 
     # magnitude
@@ -191,7 +210,7 @@ def make_plots(verbose, runid, filtmask):
             plt.rcParams.update({'font.size':20})
             tex = np.where(np.isfinite(test_m[:, f]))[0]
             plt.hist(test_m[tex, f], density=True, cumulative=True, bins=30, histtype='step', \
-                     ls='solid', lw=1, alpha=1, color='black', label='test '+filtnames[f])
+                     ls='solid', lw=1, alpha=1, color='dodgerblue', label='test '+filtnames[f])
             trx = np.where(np.isfinite(train_m[:, f]))[0]
             plt.hist(train_m[trx, f], density=True, cumulative=True, bins=30, histtype='step', \
                      ls='solid', lw=4, alpha=0.4, color='black', label='train '+filtnames[f])
@@ -200,6 +219,7 @@ def make_plots(verbose, runid, filtmask):
             plt.ylabel('Cumulative Fraction of Galaxies')
             plt.legend(loc='upper left', prop={'size':16}, labelspacing=0.5)
             plt.savefig(pfnm, bbox_inches='tight')
+            plt.close()
             if verbose: print('Wrote '+pfnm)
     
     # error vs magnitude
@@ -211,7 +231,7 @@ def make_plots(verbose, runid, filtmask):
             tex = np.where(np.isfinite(test_m[:, f]))[0]
             tx = np.random.choice(tex, size=5000, replace=False)
             plt.plot(test_m[tx, f], test_me[tx, f], 'o', ms=3, alpha=0.4, mew=0, \
-                     color='black', label='test '+filtnames[f])
+                     color='dodgerblue', label='test '+filtnames[f])
             del tex, tx
             trx = np.where(np.isfinite(train_m[:, f]))[0]
             tx = np.random.choice(trx, size=5000, replace=False)
@@ -223,6 +243,7 @@ def make_plots(verbose, runid, filtmask):
             plt.title('5000 Random Galaxies')
             plt.legend(loc='upper left', prop={'size':16}, labelspacing=0.5)
             plt.savefig(pfnm, bbox_inches='tight')
+            plt.close()
             if verbose: print('Wrote '+pfnm)
 
     if verbose:
