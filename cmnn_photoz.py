@@ -8,8 +8,9 @@ import datetime
 ###   and are not reconfirmed to be valid by this code.
 
 
-def return_photoz( test_c, test_ce, train_c, train_z, \
-    ppf_value, thresh_table, selection_mode, minimum_Ncolors, minimum_Nneighbors ):
+def return_photoz(test_c, test_ce, train_c, train_z, \
+                  ppf_value, thresh_table, selection_mode, \
+                  minimum_Ncolors, minimum_Nneighbors):
 
     ### For a single test galaxy, return photometric redshift and uncertainty based
     ###  on the supplied training-set galaxies and CMNN Estimator mode parameters.
@@ -152,14 +153,14 @@ def return_photoz( test_c, test_ce, train_c, train_z, \
     return [Photoz, PhotozError, Ncm]
 
 
-def make_zphot(verbose, runid, force_idet, force_gridet, cmnn_minNc, cmnn_minNN, cmnn_ppf, \
-    cmnn_rsel, cmnn_ppmag, cmnn_ppclr):
+def make_zphot(verbose, runid, filtmask, \
+               force_idet, force_gridet, \
+               cmnn_minNc, cmnn_minNN, cmnn_ppf, \
+               cmnn_rsel, cmnn_ppmag, cmnn_ppclr):
 
     if verbose:
-        print(' ')
-        print('Starting cmnn_photoz.make_zphot(), ',datetime.datetime.now())
+        print('Starting cmnn_photoz.make_zphot:, ',datetime.datetime.now())
 
-    ### Double-check a few of the input values to ensure consistency
     if (cmnn_ppmag == True) & (force_idet == False):
         print('Error. Must set force_idet = True in cmnn_run, to be applied during catalog generation,')
         print('in order to use the setting of cmnn_ppmag = True.')
@@ -175,58 +176,53 @@ def make_zphot(verbose, runid, force_idet, force_gridet, cmnn_minNc, cmnn_minNN,
         print('Exit (cmnn_ppclr and force_gridet user inputs are incompatible).')
         exit()
 
-    ### Not all columns need to be read in
-    if verbose: print('Reading test and train catalogs in output/run_'+runid+'/')
-    all_test_id = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='int', usecols=(0) )
-    all_test_tz = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(1) )
-    all_test_m  = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(2,4,6,8,10,12) )
-    # all_test_me = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(3,5,7,9,11,13) )
-    all_test_c  = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(14,16,18,20,22) )
-    all_test_ce = np.loadtxt( 'output/run_'+runid+'/test.cat', dtype='float', usecols=(15,17,19,21,23) )
-
-    all_train_id = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='int', usecols=(0) )
-    all_train_tz = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(1) )
-    all_train_m  = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(2,4,6,8,10,12) )
-    # all_train_me = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(3,5,7,9,11,13) )
-    all_train_c  = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(14,16,18,20,22) )
-    # all_train_ce = np.loadtxt( 'output/run_'+runid+'/train.cat', dtype='float', usecols=(15,17,19,21,23) )
+    if verbose: print('Reading test and training catalogs in output/run_'+runid+'/')
+    all_test_id = np.loadtxt('output/run_'+runid+'/test.cat', dtype='int', usecols=(0))
+    all_test_tz = np.loadtxt('output/run_'+runid+'/test.cat', dtype='float', usecols=(1))
+    all_test_m = np.loadtxt('output/run_'+runid+'/test.cat', dtype='float', usecols=(2,4,6,8,10,12,14,16,18))
+    all_test_c = np.loadtxt('output/run_'+runid+'/test.cat', dtype='float', usecols=(14,16,18,20,22,24,26,28))
+    all_test_ce = np.loadtxt('output/run_'+runid+'/test.cat', dtype='float', usecols=(15,17,19,21,23,25,27,29))
+    all_train_id = np.loadtxt('output/run_'+runid+'/train.cat', dtype='int', usecols=(0))
+    all_train_tz = np.loadtxt('output/run_'+runid+'/train.cat', dtype='float', usecols=(1))
+    all_train_m = np.loadtxt('output/run_'+runid+'/train.cat', dtype='float', usecols=(2,4,6,8,10,12,14,16,18))
+    all_train_c = np.loadtxt('output/run_'+runid+'/train.cat', dtype='float', usecols=(14,16,18,20,22,24,26,28))
 
     if verbose:
         print('Test set array lengths.')
-        print('all_test_id  = ',len(all_test_id))
-        print('all_test_tz  = ',len(all_test_tz))
-        print('all_test_m   = ',len(all_test_m))
-        print('all_test_c   = ',len(all_test_c))
-        print('all_test_ce  = ',len(all_test_ce))
+        print('  all_test_id  : ', len(all_test_id))
+        print('  all_test_tz  : ', len(all_test_tz))
+        print('  all_test_m   : ', len(all_test_m))
+        print('  all_test_c   : ', len(all_test_c))
+        print('  all_test_ce  : ', len(all_test_ce))
         print('Training set array lengths.')
-        print('all_train_id = ',len(all_train_id))
-        print('all_train_tz = ',len(all_train_tz))
-        print('all_train_m  = ',len(all_train_m))
-        print('all_train_c  = ',len(all_train_c))
+        print('  all_train_id : ', len(all_train_id))
+        print('  all_train_tz : ', len(all_train_tz))
+        print('  all_train_m  : ', len(all_train_m))
+        print('  all_train_c  : ', len(all_train_c))
 
-    ### Prepare a table of thresholds based on the desired percent point function.
-    ### We use a table b/c chi2.ppf is slow, and we only want to do this once.
-    cmnn_thresh_table = np.zeros( 6, dtype='float' )
-    for i in range(6):
-        cmnn_thresh_table[i] = chi2.ppf(cmnn_ppf,i)
+    # table of thresholds given PPF value for each degree of freedom (up to 8 colors)
+    cmnn_thresh_table = np.zeros(9, dtype='float')
+    for i in range(9):
+        cmnn_thresh_table[i] = chi2.ppf(cmnn_ppf, i)
     cmnn_thresh_table[0] = float(0.0000)
     if verbose:
         print('cmnn_thresh_table:')
-        for i in range(6):
-            print('i, threshold = ',i,cmnn_thresh_table[i])
+        for i in range(9):
+            print('i, threshold = ', i, cmnn_thresh_table[i])
     del i
 
-    ### Prepare for a magnitude pre-cut on the training set
+    # prepare for a magnitude pre-cut on the training set
     if (cmnn_ppmag == True) & (force_idet == True):
-        ppmag_sorted_train_imags = np.sort( all_train_m[:,3] )
-        ppmag_fractions = np.asarray( range(len(ppmag_sorted_train_imags)), dtype='float') /\
-        float(len(ppmag_sorted_train_imags))
+        ppmag_sorted_train_imags = np.sort( all_train_m[:, 3] )
+        ppmag_fractions = np.asarray( range(len(ppmag_sorted_train_imags)), dtype='float') \
+        / float(len(ppmag_sorted_train_imags))
 
-    ### Open file for the photo-z and print a header line
-    if verbose: print('Starting to create list of photo-z: output/run_'+runid+'/zphot.cat')
+    if verbose:
+        print('Starting to create list of photo-z: output/run_'+runid+'/zphot.cat')
+    
     fout = open('output/run_'+runid+'/zphot.cat','w')
     fout.write('# cmnn_minNc=%3i cmnn_minNN=%3i cmnn_ppf=%4.2f cmnn_rsel=%i cmnn_ppmag=%r cmnn_ppclr=%r \n' % \
-        (cmnn_minNc,cmnn_minNN,cmnn_ppf,cmnn_rsel,cmnn_ppmag,cmnn_ppclr))
+        (cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, cmnn_ppmag, cmnn_ppclr))
 
     ### Calculate photometric redshifts for all test-set galaxies and write to zphot file
     ### There are 3 different conditions for limiting (or not) the training set for a test galaxy

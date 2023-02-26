@@ -6,6 +6,18 @@ import cmnn_photoz
 import cmnn_analysis
 import cmnn_tools
 
+def str2bool(v):
+    #from https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse/36031646
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 def run(verbose, runid, filtmask, yfilt, catalog, \
         test_m5, train_m5, test_mcut, train_mcut, \
         force_idet, force_gridet, test_N, train_N, \
@@ -24,15 +36,15 @@ def run(verbose, runid, filtmask, yfilt, catalog, \
                                      test_m5, train_m5, test_mcut, train_mcut, \
                                      force_idet, force_gridet, test_N, train_N, \
                                      cmnn_minNc)
-    cmnn_catalog.make_plots(verbose, runid)
+    cmnn_catalog.make_plots(verbose, runid, filtmask)
 
     tmp_str = str(datetime.datetime.now())
     os.system("echo 'start cmnn_photoz: "+tmp_str+"' >> "+tmp_fnm)
     
     cmnn_photoz.make_zphot(verbose, runid, filtmask, \
                            force_idet, force_gridet, \
-                           cmnn_minNc, cmnn_minNN, cmnn_ppf, cmnn_rsel, \
-                           cmnn_ppmag, cmnn_ppclr)
+                           cmnn_minNc, cmnn_minNN, cmnn_ppf, \
+                           cmnn_rsel, cmnn_ppmag, cmnn_ppclr)
 
     tmp_str = str(datetime.datetime.now())
     os.system("echo 'start cmnn_analysis: "+tmp_str+"' >> "+tmp_fnm)
@@ -76,19 +88,19 @@ if __name__ == '__main__':
     
     parser.add_argument('--test_m5', nargs='+', action='store', dest='user_test_m5', type=float,\
                         help='5-sigma magnitude limits (depths) for test-set galaxies', \
-                        default=[26.1, 27.4, 27.5, 26.8, 26.1, 24.9, 24.0, 24.0, 24.0])
+                        default=[26.1, 27.4, 27.5, 26.8, 26.1, 24.9, 24.0, 24.2, 23.9])
     
     parser.add_argument('--train_m5', nargs='+', action='store', dest='user_train_m5', type=float,\
                         help='5-sigma magnitude limits (depths) for training-set galaxies', \
-                        default=[26.1, 27.4, 27.5, 26.8, 26.1, 24.9, 24.0, 24.0, 24.0])
+                        default=[26.1, 27.4, 27.5, 26.8, 26.1, 24.9, 24.0, 24.2, 23.9])
 
     parser.add_argument('--test_mcut', nargs='+', action='store', dest='user_test_mcut', type=float,\
                         help='magnitude cut-off to apply to the test-set galaxies', 
-                        default=[26.1, 27.4, 27.5, 26.8, 26.1, 24.9, 24.0, 24.0, 24.0])
+                        default=[26.1, 27.4, 27.5, 25.0, 26.1, 24.9, 24.0, 24.2, 23.9])
     
     parser.add_argument('--train_mcut', nargs='+', action='store', dest='user_train_mcut', type=float,\
                         help='magnitude cut-off to apply to the training-set galaxies', \
-                        default=[26.1, 27.4, 27.5, 26.8, 26.1, 24.9, 24.0, 24.0, 24.0])
+                        default=[26.1, 27.4, 27.5, 25.0, 26.1, 24.9, 24.0, 24.2, 23.9])
    
     parser.add_argument('--force_idet', action='store', dest='user_force_idet', type=str2bool, \
                         help='force i-band detection for all galaxies', default=True, \
@@ -102,10 +114,10 @@ if __name__ == '__main__':
                         help='number of test-set galaxies', default=40000)
 
     parser.add_argument('--train_N', action='store', dest='user_train_N', type=int, \
-                        help='number of training-set galaxies', default=200000)
+                        help='number of training-set galaxies', default=100000)
 
     parser.add_argument('--cmnn_minNc', action='store', dest='user_cmnn_minNc', type=int, \
-                        help='CMNN: minimum number of colors for galaxies (2 to 8)', default=3, \
+                        help='CMNN: minimum number of colors for galaxies (2 to 8)', default=5, \
                         choices=[2,3,4,5,6,7,8])
 
     parser.add_argument('--cmnn_minNN', action='store', dest='user_cmnn_minNN', type=int, \
@@ -299,6 +311,7 @@ if __name__ == '__main__':
     if args.user_verbose:
         print('Find user inputs in '+tmp_path+'/inputs.txt')
         print('Find user processing timestamps in '+tmp_path+'/timestamps.txt')
+        print(' ')
         print('Starting cmnn_run.run: ', datetime.datetime.now())
     del tmp_path
         

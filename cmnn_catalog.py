@@ -8,8 +8,7 @@ def make_test_and_train(verbose, runid, filtmask, yfilt, catalog,
                         force_idet, force_gridet, test_N, train_N, cmnn_minNc):
     
     if verbose:
-        print('Starting cmnn_catalog.make_test_and_train(), ',datetime.datetime.now())
-        print('Read the mock catalog of true redshifts and magnitudes.')
+        print('Starting cmnn_catalog.make_test_and_train: ',datetime.datetime.now())
 
     all_id = np.loadtxt(catalog, dtype='float', usecols=(0))
     all_tz = np.loadtxt(catalog, dtype='float', usecols=(1))
@@ -146,13 +145,15 @@ def make_test_and_train(verbose, runid, filtmask, yfilt, catalog,
         train_fout.close()
         del tr_rx,train_fout
 
-        if verbose: print('Wrote: ','output/run_'+runid+'/test.cat, output/run_'+runid+'/train.cat')
+        if verbose:
+            print('Wrote ','output/run_'+runid+'/test.cat, output/run_'+runid+'/train.cat')
+            print('Finished cmnn_catalog.make_test_and_train: ',datetime.datetime.now())
 
 
-def make_plots(verbose, runid):
+def make_plots(verbose, runid, filtmask):
 
     if verbose:
-        print('Starting cmnn_catalog.make_plots(), ',datetime.datetime.now())
+        print('Starting cmnn_catalog.make_plots: ',datetime.datetime.now())
 
     if os.path.isdir('output/run_'+runid+'/plot_cats') == False:
         os.system('mkdir output/run_'+runid+'/plot_cats')
@@ -171,15 +172,15 @@ def make_plots(verbose, runid):
     pfnm = 'output/run_'+runid+'/plot_cats/hist_ztrue'
     fig = plt.figure(figsize=(10,7))
     plt.rcParams.update({'font.size':20})
-    plt.hist( test_tz,  density=True, bins=30, histtype='step', ls='solid', lw=2, \
+    plt.hist( test_tz,  density=True, bins=30, histtype='step', ls='solid', lw=1, \
              alpha=1, color='black', label='test')
     plt.hist( train_tz, density=True, bins=30, histtype='step', ls='solid', lw=4, \
-             alpha=0.5, color='black', label='train')
+             alpha=0.4, color='black', label='train')
     plt.xlabel('Mock Catalog True Redshift')
     plt.ylabel('Fraction of Galaxies')
     plt.legend(loc='upper right', prop={'size':16}, labelspacing=0.5)
     plt.savefig(pfnm, bbox_inches='tight')
-    if verbose: print('Made '+pfnm)
+    if verbose: print('Wrote '+pfnm)
 
     # magnitude
     filtnames = ['u','g','r','i','z','y','J','H','K']
@@ -189,43 +190,40 @@ def make_plots(verbose, runid):
             fig  = plt.figure(figsize=(10,7))
             plt.rcParams.update({'font.size':20})
             tex = np.where(np.isfinite(test_m[:, f]))[0]
-            plt.hist(test_m[tex, f], density=True, cumulative=True, bins=30, histtype='step', ls='solid',\
-                    lw=2, alpha=1, color='black', label='test '+filtnames[f])
+            plt.hist(test_m[tex, f], density=True, cumulative=True, bins=30, histtype='step', \
+                     ls='solid', lw=1, alpha=1, color='black', label='test '+filtnames[f])
             trx = np.where(np.isfinite(train_m[:, f]))[0]
-            plt.hist(train_m[trx, f], density=True, cumulative=True, bins=30, histtype='step', ls='solid',\
-                    lw=4, alpha=0.5, color='black', label='train '+filtnames[f])
+            plt.hist(train_m[trx, f], density=True, cumulative=True, bins=30, histtype='step', \
+                     ls='solid', lw=4, alpha=0.4, color='black', label='train '+filtnames[f])
             del tex, trx
             plt.xlabel('Observed Apparent '+filtnames[f]+'-band Magnitude')
             plt.ylabel('Cumulative Fraction of Galaxies')
             plt.legend(loc='upper left', prop={'size':16}, labelspacing=0.5)
             plt.savefig(pfnm, bbox_inches='tight')
-            if verbose: print('Made '+pfnm)
+            if verbose: print('Wrote '+pfnm)
     
     # error vs magnitude
     for f, fm in enumerate(filtmask):
         if fm == 1:
-            pfnm = 'output/run_'+runid+'/plot_cats/test_mage_vs_mag_'+filtnames[f]
+            pfnm = 'output/run_'+runid+'/plot_cats/mage_vs_mag_'+filtnames[f]
             fig  = plt.figure(figsize=(10,7))
             plt.rcParams.update({'font.size':20})
             tex = np.where(np.isfinite(test_m[:, f]))[0]
             tx = np.random.choice(tex, size=5000, replace=False)
-            plt.plot(test_m[tx, f], test_me[tx, f], 'o', alpha=0.5, mew=0)
+            plt.plot(test_m[tx, f], test_me[tx, f], 'o', ms=3, alpha=0.4, mew=0, \
+                     color='black', label='test '+filtnames[f])
             del tex, tx
-            plt.xlabel('Observed Apparent '+filtnames[f]+'-band Magnitude')
-            plt.ylabel('Error')
-            plt.title('5000 Test Set Galaxes')
-            plt.savefig(pfnm, bbox_inches='tight')
-            if verbose: print('Made '+pfnm)
-
-            pfnm = 'output/run_'+runid+'/plot_cats/train_mage_vs_mag_'+filtnames[f]
-            fig  = plt.figure(figsize=(10,7))
-            plt.rcParams.update({'font.size':20})
             trx = np.where(np.isfinite(train_m[:, f]))[0]
             tx = np.random.choice(trx, size=5000, replace=False)
-            plt.plot(train_m[tx, f], train_me[tx, f], 'o', alpha=0.5, mew=0)
-            del tex, tx
+            plt.plot(train_m[tx, f], train_me[tx, f], 'o', ms=1, alpha=1, mew=0, \
+                     color='black', label='train '+filtnames[f])
+            del trx, tx
             plt.xlabel('Observed Apparent '+filtnames[f]+'-band Magnitude')
             plt.ylabel('Error')
-            plt.title('5000 Training Set Galaxes')
+            plt.title('5000 Random Galaxies')
+            plt.legend(loc='upper left', prop={'size':16}, labelspacing=0.5)
             plt.savefig(pfnm, bbox_inches='tight')
-            if verbose: print('Made '+pfnm)
+            if verbose: print('Wrote '+pfnm)
+
+    if verbose:
+        print('Finshed cmnn_catalog.make_plots: ',datetime.datetime.now())
