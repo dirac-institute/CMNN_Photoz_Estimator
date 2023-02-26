@@ -1,2 +1,5 @@
 makecat.py
 makecat_plots
+output/
+.ipynb_checkpoints/
+__pycache__/
