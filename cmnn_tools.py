@@ -1,6 +1,7 @@
 import os
 import numpy as np
 
+
 def convert_visits_to_depths( visits, m5_single = [23.9, 25.0, 24.7, 24.0, 23.3, 22.1] ):
     ### Convert from number of visits per filter to the 5-sigma limiting magnitude depths
 
